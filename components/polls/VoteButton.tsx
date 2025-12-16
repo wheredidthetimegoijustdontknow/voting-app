@@ -1,77 +1,74 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 
 interface VoteButtonProps {
   pollId: string;
   choice: string;
-  disabled: boolean;
-  isUserChoice?: boolean;
+  isSelected: boolean;
+  onVoteSuccess?: () => void; // NEW: Add this prop
 }
 
 export default function VoteButton({ 
   pollId, 
   choice, 
-  disabled,
-  isUserChoice = false 
+  isSelected,
+  onVoteSuccess 
 }: VoteButtonProps) {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isVoting, setIsVoting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
 
   const handleVote = async () => {
-    // Clear any previous errors
+    setIsVoting(true);
     setError(null);
-    setIsLoading(true);
 
     try {
       const response = await fetch('/api/polls/vote', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          poll_id: pollId,
-          choice: choice,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ poll_id: pollId, choice }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to submit vote');
+        throw new Error(data.error || 'Failed to vote');
       }
 
-      // Success! Refresh the page to show updated results
-      router.refresh();
+      // NEW: Trigger immediate refresh after successful vote
+      if (onVoteSuccess) {
+        onVoteSuccess();
+      }
     } catch (err) {
-      console.error('Vote submission error:', err);
       setError(err instanceof Error ? err.message : 'Failed to vote');
-      setIsLoading(false);
+    } finally {
+      setIsVoting(false);
     }
   };
 
+  if (isSelected) {
+    return (
+      <button
+        disabled
+        className="w-full px-4 py-2 bg-green-100 text-green-700 rounded-lg font-medium cursor-not-allowed"
+      >
+        ✓ Your Vote
+      </button>
+    );
+  }
+
   return (
-    <div className="flex flex-col gap-1">
+    <div className="space-y-2">
       <button
         onClick={handleVote}
-        disabled={disabled || isLoading}
-        className={`
-          px-4 py-2 rounded-lg font-medium transition-all
-          ${disabled 
-            ? 'bg-gray-300 text-black cursor-not-allowed'
-            : 'bg-blue-500 hover:bg-blue-600 text-white cursor-pointer'
-          }
-          ${isLoading ? 'opacity-50 cursor-wait' : ''}
-          ${isUserChoice ? 'ring-2 ring-green-500 ring-offset-2' : ''}
-        `}
+        disabled={isVoting}
+        className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors"
       >
-        {isLoading ? 'Voting...' : choice}
+        {isVoting ? 'Voting...' : 'Vote'}
       </button>
       
       {error && (
-        <span className="text-xs text-red-600">{error}</span>
+        <p className="text-sm text-red-600">{error}</p>
       )}
     </div>
   );

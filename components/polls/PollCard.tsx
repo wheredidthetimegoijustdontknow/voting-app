@@ -1,98 +1,103 @@
 'use client';
 
-import { PollWithResults } from '@/lib/polls/types';
-import { formatPollDate, shortenEmail } from '@/lib/polls/helpers';
+import type { PollWithResults } from '@/lib/polls/types';
 import VoteButton from './VoteButton';
+import { EditPollButton } from './EditPollButton'; // Import the EditPollButton
 
 interface PollCardProps {
-  poll: PollWithResults;
-  isSignedIn: boolean;
+  poll: PollWithResults;
+  isSignedIn: boolean;
+  onVoteSuccess?: () => void;
+  // --- NEW PROP ---
+  currentUserId: string | null; // The ID of the currently logged-in user
 }
 
-export default function PollCard({ poll, isSignedIn }: PollCardProps) {
-  // ✅ Use snake_case properties from your existing type
-  const userVotedChoice = poll.user_vote_choice;
-  const hasVoted = poll.user_has_voted;
+export default function PollCard({ poll, isSignedIn, onVoteSuccess, currentUserId }: PollCardProps) {
+  
+  const isCreator = currentUserId === poll.user_id; // Assumes poll.user_id exists on PollWithResults
 
   return (
-    <div className="border border-gray-200 rounded-lg p-6 bg-white shadow-sm hover:shadow-md transition-shadow">
-      {/* Poll Header */}
-      <div className="mb-4">
-        <h3 className="text-xl font-semibold mb-2 text-black">
+    <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
+      {/* Poll Question */}
+      <div>
+        <h3 className="text-xl font-semibold text-gray-900">
           {poll.question_text}
         </h3>
-        <div className="flex items-center gap-2 text-sm text-black">
-          <span>By {shortenEmail(poll.creator_email)}</span>
-          <span>•</span>
-          <span>{formatPollDate(poll.created_at)}</span>
-          <span>•</span>
-          <span className="font-medium text-blue-600">
-            {poll.total_votes} {poll.total_votes === 1 ? 'vote' : 'votes'}
-          </span>
-        </div>
+        <p className="text-sm text-gray-500 mt-1">
+          By {poll.creator_email} • {poll.total_votes} {poll.total_votes === 1 ? 'vote' : 'votes'}
+        </p>
+      
+      {isCreator && (
+          <EditPollButton 
+            pollId={poll.id} 
+            isCreator={isCreator}
+            // The button likely needs the 'refresh' function from PollingPollList
+            // to update the list immediately after a successful delete.
+            // If the delete action redirects, this may not be needed, but it's good practice.
+            onDeleteSuccess={onVoteSuccess} 
+          />
+           )}
       </div>
-
-      {/* User Vote Status */}
-      {hasVoted && userVotedChoice && (
-        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-          <p className="text-sm text-green-800 font-medium">
-            ✓ You voted for: <span className="font-bold">{userVotedChoice}</span>
-          </p>
-        </div>
-      )}
-
-      {/* Vote Buttons (only if signed in and hasn't voted) */}
-      {isSignedIn && !hasVoted && (
-        <div className="mb-4 flex flex-wrap gap-2">
-          {poll.results.map((result) => (
-            <VoteButton
-              key={result.choice}
-              pollId={poll.id}
-              choice={result.choice}
-              disabled={hasVoted}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Not Signed In Message */}
-      {!isSignedIn && (
-        <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-          <p className="text-sm text-black">
-            Sign in to vote on this poll
+      
+      {poll.user_has_voted && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+          <p className="text-green-800 font-medium text-sm">
+            ✓ You voted for: {poll.user_vote_choice}
           </p>
         </div>
       )}
 
       {/* Results */}
       <div className="space-y-3">
-        {poll.results.map((result) => (
-          <div key={result.choice}>
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-sm font-medium text-black">
-                {result.choice}
-              </span>
-              <span className="text-sm text-black">
-                {result.count} ({result.percentage}%)
-              </span>
+        {poll.results.map((result) => {
+          const isUserChoice = poll.user_vote_choice === result.choice;
+          
+          return (
+            <div key={result.choice} className="space-y-2">
+              {/* Choice Header */}
+              <div className="flex justify-between items-center">
+                <span className={`font-medium ${isUserChoice ? 'text-green-700' : 'text-gray-700'}`}>
+                  {result.choice} {isUserChoice && '←'}
+                </span>
+                <span className="text-sm text-gray-600">
+                  {result.count} ({result.percentage.toFixed(1)}%)
+                </span>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                <div
+                  className={`h-full transition-all duration-500 ease-out ${
+                    isUserChoice ? 'bg-green-500' : 'bg-blue-500'
+                  }`}
+                  style={{ width: `${result.percentage}%` }}
+                />
+              </div>
+
+              {/* Vote Button */}
+              {isSignedIn && !poll.user_has_voted && (
+                <VoteButton
+                  pollId={poll.id}
+                  choice={result.choice}
+                  isSelected={false}
+                  onVoteSuccess={onVoteSuccess} // NEW: Pass callback
+                />
+              )}
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className={`h-2 rounded-full transition-all duration-500 ${
-                  userVotedChoice === result.choice
-                    ? 'bg-green-500'
-                    : 'bg-blue-500'
-                }`}
-                style={{ 
-                  width: result.percentage === 0 
-                    ? '0%' 
-                    : `${Math.max(result.percentage, 5)}%` 
-                }}
-              />
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
+      
+      
+
+      {/* Sign in prompt for non-authenticated users */}
+      {!isSignedIn && !poll.user_has_voted && (
+        <div className="text-center py-3 bg-gray-50 rounded-lg border border-gray-200">
+          <p className="text-sm text-gray-600">
+            Sign in to vote on this poll
+          </p>
+        </div>
+      )}
     </div>
   );
 }

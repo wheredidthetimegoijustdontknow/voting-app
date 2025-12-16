@@ -2,14 +2,14 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { fetchPollsWithResults } from '@/lib/polls/queries';
 import AuthButton from '@/components/auth/AuthButton';
 import CreatePollForm from '@/components/polls/CreatePollForm';
-import PollCard from '@/components/polls/PollCard';
+import PollingPollList from '@/components/polls/PollsContainer';  
 
 export default async function Home() {
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
-  
   const polls = await fetchPollsWithResults();
-
+  const currentUserId = user?.id;
+  
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -29,30 +29,8 @@ export default async function Home() {
           <CreatePollForm />
         </div>
 
-        {/* Polls List */}
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            All Polls ({polls.length})
-          </h2>
-          
-          {polls.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-              <p className="text-black">
-                No polls yet. Create the first one!
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {polls.map((poll) => (
-                <PollCard 
-                  key={poll.id} 
-                  poll={poll} 
-                  isSignedIn={!!user}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Polls List with Polling */}
+        <PollingPollList initialPolls={polls} userId={user?.id || null} />
       </main>
     </div>
   );
