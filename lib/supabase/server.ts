@@ -1,3 +1,5 @@
+/** C:\Users\marcc\OneDrive\Documents\Coding_projects\voting-app\lib\supabase\server.ts */
+
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 

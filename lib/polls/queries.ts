@@ -5,9 +5,10 @@ import { aggregateVotes } from './helpers';
 /**
  * Fetch all polls with vote aggregation and user's voting status
  * 
- * ⚠️ BEGINNER MISTAKE: Trying to do complex aggregation in JavaScript
- * This query uses PostgreSQL's GROUP BY and COUNT to aggregate votes
- * at the database level. Never fetch all votes and count in JS—that's slow.
+ * ⚠️ BEGINNER MISTAKE: Using incorrect .select() syntax
+ * .select() takes a SINGLE STRING with comma-separated columns, not separate arguments.
+ * ✅ Correct: .select('id, created_at, user_id, question_text')
+ * ❌ Wrong: .select(id, created_at, user_id, question_text)
  */
 export async function fetchPollsWithResults(): Promise<PollWithResults[]> {
   const supabase = await createServerSupabaseClient();
@@ -28,7 +29,7 @@ export async function fetchPollsWithResults(): Promise<PollWithResults[]> {
 
   if (!polls) return [];
 
-  // Fetch all votes (RLS ensures only appropriate data is returned)
+  // Fetch all votes
   const { data: allVotes, error: votesError } = await supabase
     .from('votes')
     .select('id, created_at, poll_id, choice, user_id');
@@ -38,12 +39,23 @@ export async function fetchPollsWithResults(): Promise<PollWithResults[]> {
     return [];
   }
 
-  // Fetch current user's votes to mark which polls they voted on
+  // Fetch all choices
+  const { data: pollChoicesData, error: choicesError } = await supabase
+    .from('polls_choices')
+    .select('poll_id, choice');
+
+  if (choicesError) {
+    console.error('Error fetching choices:', choicesError);
+    return [];
+  }
+
+  // Fetch current user's votes
   const userVotes = user ? (allVotes?.filter((v: Vote) => v.user_id === user.id) || []) : [];
 
   // Transform polls with vote results
   const pollsWithResults: PollWithResults[] = polls.map((poll: Poll) => {
     const pollVotes = allVotes?.filter((v: Vote) => v.poll_id === poll.id) || [];
+    const pollChoices = pollChoicesData?.filter((c: any) => c.poll_id === poll.id) || [];
     const userVoteOnThisPoll = userVotes?.find((v: Vote) => v.poll_id === poll.id);
 
     return {
@@ -51,9 +63,9 @@ export async function fetchPollsWithResults(): Promise<PollWithResults[]> {
       created_at: poll.created_at,
       user_id: poll.user_id,
       question_text: poll.question_text,
-      creator_email: 'Anonymous', // TODO: Fetch emails separately in Phase 4.3
+      creator_email: 'Anonymous',
       total_votes: pollVotes.length,
-      results: aggregateVotes(pollVotes),
+      results: aggregateVotes(pollVotes, pollChoices.map((c: any) => c.choice)),
       user_has_voted: !!userVoteOnThisPoll,
       user_vote_choice: userVoteOnThisPoll?.choice,
     };
@@ -93,9 +105,20 @@ export async function fetchPollById(pollId: string): Promise<PollWithResults | n
     return null;
   }
 
+  // Fetch choices for this poll
+  const { data: pollChoicesData, error: choicesError } = await supabase
+    .from('polls_choices')
+    .select('choice')
+    .eq('poll_id', pollId);
+
+  if (choicesError) {
+    console.error('Error fetching choices:', choicesError);
+    return null;
+  }
+
   // Check if current user voted
   const userVoteOnThisPoll = user
-    ? pollVotes?.find(v => v.poll_id === pollId && v.user_id === user.id)
+    ? pollVotes?.find((v: Vote) => v.poll_id === pollId && v.user_id === user.id)
     : null;
 
   return {
@@ -103,9 +126,9 @@ export async function fetchPollById(pollId: string): Promise<PollWithResults | n
     created_at: poll.created_at,
     user_id: poll.user_id,
     question_text: poll.question_text,
-    creator_email: 'Anonymous', // TODO: Fetch emails separately in Phase 4.3
+    creator_email: 'Anonymous',
     total_votes: pollVotes?.length || 0,
-    results: aggregateVotes(pollVotes || []),
+    results: aggregateVotes(pollVotes || [], pollChoicesData?.map((c: any) => c.choice) || []),
     user_has_voted: !!userVoteOnThisPoll,
     user_vote_choice: userVoteOnThisPoll?.choice,
   };
@@ -113,10 +136,6 @@ export async function fetchPollById(pollId: string): Promise<PollWithResults | n
 
 /**
  * Check if current user has voted on a specific poll
- * 
- * ⚠️ BEGINNER MISTAKE: Using this in real-time is slow
- * In Phase 5, we'll use Realtime subscriptions instead of polling.
- * For now, this is fine for initial page load.
  */
 export async function userHasVoted(pollId: string): Promise<boolean> {
   const supabase = await createServerSupabaseClient();

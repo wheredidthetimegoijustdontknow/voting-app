@@ -7,7 +7,7 @@ import { Vote, VoteResult } from './types';
  * If a poll has 0 votes, division by zero causes NaN percentages.
  * This function safely returns 0% for all choices when total is 0.
  */
-export function aggregateVotes(votes: Vote[]): VoteResult[] {
+export function aggregateVotes(votes: Vote[], pollChoices: string[] = []): VoteResult[] {
   // Count votes by choice
   const voteCounts: Record<string, number> = {};
 
@@ -17,16 +17,26 @@ export function aggregateVotes(votes: Vote[]): VoteResult[] {
 
   const totalVotes = votes.length;
 
-  // Convert to VoteResult array with percentages
-  return Object.entries(voteCounts)
-    .map(([choice, count]) => ({
-      choice,
-      count,
-      percentage: totalVotes === 0 ? 0 : Math.round((count / totalVotes) * 100),
-    }))
-    .sort((a, b) => b.count - a.count); // Sort by count descending
-}
+  // Create results for all choices (even ones with 0 votes)
+  const results = pollChoices.map((choice) => ({
+    choice,
+    count: voteCounts[choice] || 0,
+    percentage: totalVotes === 0 ? 0 : Math.round((voteCounts[choice] || 0) / totalVotes * 100),
+  }));
 
+  // Also add any choices that have votes but aren't in pollChoices
+  Object.entries(voteCounts).forEach(([choice, count]) => {
+    if (!results.find(r => r.choice === choice)) {
+      results.push({
+        choice,
+        count,
+        percentage: totalVotes === 0 ? 0 : Math.round(count / totalVotes * 100),
+      });
+    }
+  });
+
+  return results.sort((a, b) => b.count - a.count);
+}
 /**
  * Format a date for display (e.g., "Jan 15, 2:30 PM")
  */
@@ -49,10 +59,11 @@ export function shortenEmail(email: string): string {
 }
 
 /**
- * Calculate the width percentage for a vote bar
- * (Useful for rendering progress bars in UI)
+ * Calculate bar width for progress bars
+ * Ensures minimum visible width for choices with votes
  */
-export function getBarWidth(count: number, total: number): number {
-  if (total === 0) return 0;
-  return Math.round((count / total) * 100);
+export function getBarWidth(percentage: number): string {
+  if (percentage === 0) return '0%';
+  // Ensure at least 5% width for visibility
+  return `${Math.max(percentage, 5)}%`;
 }

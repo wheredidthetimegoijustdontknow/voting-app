@@ -1,3 +1,5 @@
+/** C:\Users\marcc\OneDrive\Documents\Coding_projects\voting-app\components\auth\AuthButton.tsx */
+
 'use client'
 
 import { useState, useEffect } from 'react'
