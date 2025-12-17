@@ -30,9 +30,9 @@ export async function deletePoll(pollId: string): Promise<ActionResponse> {
     // If validation fails, return a client-friendly error message
     const validationError = validationResult.error.issues[0].message;
     console.error('Zod validation failed:', validationResult.error.issues);
-    return { 
-      success: false, 
-      error: `Input validation failed: ${validationError}` 
+    return {
+      success: false,
+      error: `Input validation failed: ${validationError}`
     };
   }
 
@@ -40,13 +40,13 @@ export async function deletePoll(pollId: string): Promise<ActionResponse> {
 
   try {
     const supabase = await createServerSupabaseClient();
-    
+
     // Check if the user is authenticated
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return { success: false, error: 'Authentication required to delete a poll.' };
     }
-    
+
     // First, verify the user is the creator of the poll
     const { data: poll, error: pollError } = await supabase
       .from('polls')
@@ -102,9 +102,79 @@ export async function deletePoll(pollId: string): Promise<ActionResponse> {
     revalidatePath(`/poll/${validatedData.pollId}`); // Individual poll page
 
     return { success: true };
-    
+
   } catch (e) {
     console.error('General Server Action error:', e);
     return { success: false, error: 'An unexpected server error occurred.' };
+  }
+}
+
+// --- 3. Define Zod Schema for Poll Update Data ---
+const UpdatePollSchema = z.object({
+  pollId: z.string().uuid({ message: "Invalid Poll ID format." }),
+  question_text: z.string().min(5, { message: "Question must be at least 5 characters long." }).max(200, { message: "Question must be less than 200 characters." }),
+});
+
+/**
+ * Handles secure update of a poll.
+ * Only the question text can be updated to protect integrity of existing votes.
+ */
+export async function updatePoll(pollId: string, question_text: string): Promise<ActionResponse> {
+  const validationResult = UpdatePollSchema.safeParse({ pollId, question_text });
+
+  if (!validationResult.success) {
+    return {
+      success: false,
+      error: validationResult.error.issues[0].message
+    };
+  }
+
+  const validatedData = validationResult.data;
+
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: 'Authentication required.' };
+    }
+
+    // Attempt update. RLS policies "Users can update their own polls" should handle permission.
+    // However, Supabase RLS failure usually results in 0 rows affected or error, 
+    // but explicit check is friendlier.
+
+    // Check ownership first for better error message
+    const { data: poll } = await supabase
+      .from('polls')
+      .select('user_id')
+      .eq('id', validatedData.pollId)
+      .single();
+
+    if (!poll) {
+      return { success: false, error: 'Poll not found.' };
+    }
+
+    if (poll.user_id !== user.id) {
+      return { success: false, error: 'You do not have permission to edit this poll.' };
+    }
+
+    const { error } = await supabase
+      .from('polls')
+      .update({ question_text: validatedData.question_text, updated_at: new Date().toISOString() })
+      .eq('id', validatedData.pollId);
+
+    if (error) {
+      console.error('Error updating poll:', error);
+      return { success: false, error: 'Failed to update poll.' };
+    }
+
+    revalidatePath(`/poll/${validatedData.pollId}`);
+    revalidatePath('/');
+
+    return { success: true };
+
+  } catch (e) {
+    console.error('Unexpected error in updatePoll:', e);
+    return { success: false, error: 'An unexpected error occurred.' };
   }
 }

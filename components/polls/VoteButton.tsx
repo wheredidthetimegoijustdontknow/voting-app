@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { submitVote } from '@/app/actions/vote';
 
 interface VoteButtonProps {
   pollId: string;
@@ -9,11 +10,11 @@ interface VoteButtonProps {
   onVoteSuccess?: () => void;
 }
 
-export default function VoteButton({ 
-  pollId, 
-  choice, 
+export default function VoteButton({
+  pollId,
+  choice,
   isSelected,
-  onVoteSuccess 
+  onVoteSuccess
 }: VoteButtonProps) {
   const [isVoting, setIsVoting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,16 +24,16 @@ export default function VoteButton({
     setError(null);
 
     try {
-      const response = await fetch('/api/polls/vote', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ poll_id: pollId, choice }),
-      });
+      // Create FormData to send to the Server Action
+      const formData = new FormData();
+      formData.append('poll_id', pollId);
+      formData.append('choice', choice);
 
-      const data = await response.json();
+      // Call the Server Action directly
+      const result = await submitVote(formData);
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to vote');
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to vote');
       }
 
       // Trigger immediate refresh after successful vote
@@ -115,11 +116,11 @@ export default function VoteButton({
       >
         {isVoting ? 'Voting...' : 'Vote'}
       </button>
-      
+
       {error && (
-        <p 
+        <p
           className="text-body-sm"
-          style={{ 
+          style={{
             color: 'var(--color-error)',
             fontSize: 'var(--font-size-sm)',
             margin: 0

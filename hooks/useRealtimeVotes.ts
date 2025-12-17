@@ -171,9 +171,9 @@ export function useRealtimeVotes({ initialPolls, userId }: UseRealtimeVotesOptio
           const votes = votesByPoll[poll.id] || [];
           const choices = choicesByPoll[poll.id] || [];
           const choiceTexts = choices.map((c: Choice) => c.choice);
-            
-            const aggregated = aggregateVotes(votes, choiceTexts);
-            const userVote = userId ? votes.find((v: Vote) => v.user_id === userId) : null;
+
+          const aggregated = aggregateVotes(votes, choiceTexts);
+          const userVote = userId ? votes.find((v: Vote) => v.user_id === userId) : null;
 
           return {
             id: poll.id,
@@ -199,6 +199,15 @@ export function useRealtimeVotes({ initialPolls, userId }: UseRealtimeVotesOptio
     }
   }, [supabase, userId]);
 
+  // Sync local state with initialPolls when they change (e.g. via router.refresh())
+  useEffect(() => {
+    // Only update if we have new data and it's different (basic length check or deep compare if needed)
+    // For now, trust that router.refresh() passes fresh data.
+    if (initialPolls && initialPolls.length > 0) {
+      setPolls(initialPolls);
+    }
+  }, [initialPolls]);
+
   // Enhanced subscription setup with reconnection logic
   const setupSubscription = useCallback(() => {
     if (isConnectingRef.current || !userId) return;
@@ -221,44 +230,47 @@ export function useRealtimeVotes({ initialPolls, userId }: UseRealtimeVotesOptio
 
     channelRef.current = channel;
 
-    // Subscribe to vote changes with enhanced error handling
+    // Subscribe to vote changes AND poll updates with enhanced error handling
     channel
       .on('postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'votes' },
         (payload) => {
           console.log('🗳️ New vote detected:', payload.new);
           setConnectionError(null); // Clear any previous errors
-          // Update only the affected poll with null safety
           const pollId = payload.new?.poll_id;
-          if (pollId) {
-            updatePollWithVotes(pollId);
-          } else {
-            console.warn('⚠️ Vote payload missing poll_id:', payload.new);
-          }
+          if (pollId) updatePollWithVotes(pollId);
         }
       )
       .on('postgres_changes',
         { event: 'DELETE', schema: 'public', table: 'votes' },
         (payload) => {
           console.log('🗳️ Vote deleted:', payload.old);
-          setConnectionError(null); // Clear any previous errors
-          // Update only the affected poll with null safety
+          setConnectionError(null);
           const pollId = payload.old?.poll_id;
+          if (pollId) updatePollWithVotes(pollId);
+        }
+      )
+      // Listen for Poll Updates (e.g. Question change)
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'polls' },
+        (payload) => {
+          console.log('📝 Poll updated:', payload.new);
+          const pollId = payload.new?.id;
           if (pollId) {
+            // Determine if we need to full refresh or just update locally.
+            // updatePollWithVotes fetches the poll details again, so it will catch the new question.
             updatePollWithVotes(pollId);
-          } else {
-            console.warn('⚠️ Vote deletion payload missing poll_id:', payload.old);
           }
         }
       )
       .subscribe(async (status, err) => {
         isConnectingRef.current = false;
-        
+
         if (status === 'SUBSCRIBED') {
           console.log('✅ Successfully subscribed to vote changes');
           setIsConnected(true);
           setConnectionError(null);
-          
+
           // Fetch initial data once
           await fetchInitialPolls();
         } else if (status === 'CHANNEL_ERROR') {
@@ -266,7 +278,7 @@ export function useRealtimeVotes({ initialPolls, userId }: UseRealtimeVotesOptio
           console.error('❌ Error subscribing to vote changes:', errorMsg);
           setIsConnected(false);
           setConnectionError('Failed to connect to real-time updates');
-          
+
           // Attempt reconnection after delay
           if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
           reconnectTimeoutRef.current = setTimeout(() => {
@@ -277,7 +289,7 @@ export function useRealtimeVotes({ initialPolls, userId }: UseRealtimeVotesOptio
           console.error('⏰ Timeout subscribing to vote changes');
           setIsConnected(false);
           setConnectionError('Connection timed out');
-          
+
           // Attempt reconnection
           if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
           reconnectTimeoutRef.current = setTimeout(() => {
@@ -300,19 +312,19 @@ export function useRealtimeVotes({ initialPolls, userId }: UseRealtimeVotesOptio
     // Cleanup function with enhanced error handling
     return () => {
       console.log('Cleaning up vote changes subscription');
-      
+
       // Clear reconnection timeout
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
         reconnectTimeoutRef.current = null;
       }
-      
+
       // Remove channel
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
-      
+
       setIsConnected(false);
       isConnectingRef.current = false;
       setConnectionError(null);
@@ -323,7 +335,7 @@ export function useRealtimeVotes({ initialPolls, userId }: UseRealtimeVotesOptio
   const refresh = useCallback(async () => {
     console.log('Manual refresh triggered');
     setConnectionError(null);
-    
+
     // Reset initialization to force fresh data fetch
     isInitialized.current = false;
     await fetchInitialPolls();

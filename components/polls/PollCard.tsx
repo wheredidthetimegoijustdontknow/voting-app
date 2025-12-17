@@ -15,7 +15,7 @@ export default function PollCard({ poll, isSignedIn, onVoteSuccess, currentUserI
   const isCreator = currentUserId === poll.user_id;
 
   return (
-    <div 
+    <div
       className="card"
       style={{
         backgroundColor: 'var(--color-surface)',
@@ -29,9 +29,9 @@ export default function PollCard({ poll, isSignedIn, onVoteSuccess, currentUserI
     >
       {/* Poll Question */}
       <div className="space-y-2">
-        <h3 
+        <h3
           className="text-heading-lg"
-          style={{ 
+          style={{
             color: 'var(--color-text-primary)',
             margin: 0,
             fontSize: 'var(--font-size-xl)',
@@ -41,27 +41,28 @@ export default function PollCard({ poll, isSignedIn, onVoteSuccess, currentUserI
         >
           {poll.question_text}
         </h3>
-        <p 
+        <p
           className="text-body-sm"
-          style={{ 
+          style={{
             color: 'var(--color-text-secondary)',
             margin: 0
           }}
         >
           By {poll.creator_email} • {poll.total_votes} {poll.total_votes === 1 ? 'vote' : 'votes'}
         </p>
-      
+
         {isCreator && (
-          <EditPollButton 
-            pollId={poll.id} 
+          <EditPollButton
+            pollId={poll.id}
             isCreator={isCreator}
+            questionText={poll.question_text}
             onDeleteSuccess={onVoteSuccess}
           />
         )}
       </div>
-      
+
       {poll.user_has_voted && (
-        <div 
+        <div
           className="badge badge-success"
           style={{
             backgroundColor: 'var(--color-success-bg)',
@@ -84,21 +85,21 @@ export default function PollCard({ poll, isSignedIn, onVoteSuccess, currentUserI
       <div className="space-y-3" style={{ marginTop: 'var(--spacing-md)' }}>
         {poll.results.map((result) => {
           const isUserChoice = poll.user_vote_choice === result.choice;
-          
+
           return (
             <div key={result.choice} className="space-y-2">
               {/* Choice Header */}
               <div className="flex justify-between items-center">
-                <span 
+                <span
                   className="font-medium"
-                  style={{ 
+                  style={{
                     color: isUserChoice ? 'var(--color-success)' : 'var(--color-text-primary)',
                     fontWeight: '500'
                   }}
                 >
                   {result.choice} {isUserChoice && '←'}
                 </span>
-                <span 
+                <span
                   className="text-body-sm"
                   style={{ color: 'var(--color-text-secondary)' }}
                 >
@@ -107,7 +108,7 @@ export default function PollCard({ poll, isSignedIn, onVoteSuccess, currentUserI
               </div>
 
               {/* Progress Bar */}
-              <div 
+              <div
                 className="progress-bar"
                 style={{
                   width: '100%',
@@ -142,10 +143,10 @@ export default function PollCard({ poll, isSignedIn, onVoteSuccess, currentUserI
           );
         })}
       </div>
-      
+
       {/* Sign in prompt for non-authenticated users */}
       {!isSignedIn && !poll.user_has_voted && (
-        <div 
+        <div
           className="text-center"
           style={{
             padding: 'var(--spacing-md)',
@@ -157,9 +158,9 @@ export default function PollCard({ poll, isSignedIn, onVoteSuccess, currentUserI
             marginTop: 'var(--spacing-md)'
           }}
         >
-          <p 
+          <p
             className="text-body-sm"
-            style={{ 
+            style={{
               color: 'var(--color-text-secondary)',
               margin: 0
             }}

@@ -22,7 +22,7 @@ interface ActionResponse {
   success: boolean;
   error: string | null;
   // We can return the validated data shape for type safety if needed
-  data?: z.infer<typeof VoteSchema> | null; 
+  data?: z.infer<typeof VoteSchema> | null;
 }
 
 
@@ -45,10 +45,10 @@ export async function submitVote(formData: FormData): Promise<ActionResponse> {
     // If validation fails, return a client-friendly error message
     const validationError = validationResult.error.issues[0].message;
     console.error('Zod validation failed:', validationResult.error.issues);
-    return { 
-      success: false, 
-      error: `Input validation failed: ${validationError}`, 
-      data: null 
+    return {
+      success: false,
+      error: `Input validation failed: ${validationError}`,
+      data: null
     };
   }
 
@@ -57,19 +57,20 @@ export async function submitVote(formData: FormData): Promise<ActionResponse> {
 
   try {
     const supabase = await createServerSupabaseClient();
-    
+
     // Check if the user is authenticated (Optional, but good practice for double-check)
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-        // RLS should catch this, but checking explicitly provides a better error message.
-        return { success: false, error: 'Authentication required to submit a vote.', data: null };
+      // RLS should catch this, but checking explicitly provides a better error message.
+      return { success: false, error: 'Authentication required to submit a vote.', data: null };
     }
-    
+
     // 4. Insert the validated vote row
     const { error } = await supabase.from('votes').insert([
-      { 
-        poll_id: validatedData.poll_id, 
-        choice: validatedData.choice 
+      {
+        poll_id: validatedData.poll_id,
+        choice: validatedData.choice,
+        user_id: user.id // Explicitly adding user_id
       },
     ]);
 
