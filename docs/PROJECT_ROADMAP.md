@@ -49,15 +49,21 @@
 - [x] **Consistency**: Moved Header and Status to global `AppLayout`.
 - [x] **Project Overview**: Consolidated architecture, data flow, and God Mode details into `PROJECT_OVERVIEW.md`.
 
-## Phase 5: UI Refinement & Control (🚧 Next Up)
+## Phase 5: UI Refinement & Control (✅ Completed)
 
-- [ ] **Admin Overlay**: Create a compact control panel for `page.tsx` to manage bots without switching pages.
-- [ ] **Performance & Caching**: Advanced strategies for high-frequency voting rounds.
-- [ ] **Interactive Toasts**: New vote feedback with "Glow" effects and compact summaries.
+- [x] **Admin Overlay**: Create a compact control panel for `page.tsx` to manage bots without switching pages.
+- [x] **Performance & Caching**: Advanced strategies for high-frequency voting rounds.
+- [x] **Interactive Toasts**: New vote feedback with "Glow" effects and compact summaries.
+- [x] **Update PROJECT_ROADMAP.md**: Add new features to the roadmap.
+- [x] **Commit & Push**: Commit and push changes to the repository.
+
+## Phase 6: Advanced Analytics & Management (Active)
+
 - [ ] **Results Visualization**: Integrate Recharts/Chart.js for deep-dive analytics.
-
-## Phase 6: Advanced Features (Future)
-
+- [ ] **Analytics Dashboard**: Real-time engagement metrics and user behavior.
+- [ ] **User Management**: Add user roles and permissions for different levels of access.
 - [ ] **Poll Constraints**: End dates/Time limits for polls.
 - [ ] **Social Features**: Comments and social sharing links.
 - [ ] **Collapsible Analytics**: Compact summary bars for poll cards.
+- [ ] **Update PROJECT_ROADMAP.md**: Add new features to the roadmap.
+- [ ] **Commit & Push**: Commit and push changes to the repository.

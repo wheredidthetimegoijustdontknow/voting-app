@@ -51,39 +51,28 @@ export function useEnhancedRealtimePresence({
 
   // Enhanced username fetching with batching and error details
   const fetchUsernames = useCallback(async (userIds: string[]): Promise<Record<string, string>> => {
-    // Deduplicate IDs to minimize requests
-    const uniqueIds = Array.from(new Set(userIds.filter(id => !!id)));
+    // 1. Filter only valid UUIDs to avoid DB errors (e.g. "anonymous_viewer" is not a UUID)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const validUserIds = userIds.filter(id => id && uuidRegex.test(id));
+
+    // Deduplicate IDs
+    const uniqueIds = Array.from(new Set(validUserIds));
     if (uniqueIds.length === 0) return {};
 
     const usernameMap: Record<string, string> = {};
-    const batchSize = 30; // Small batch size to avoid URL length limits
+    const batchSize = 50;
 
     try {
       for (let i = 0; i < uniqueIds.length; i += batchSize) {
         const batch = uniqueIds.slice(i, i + batchSize);
 
-        // Add timeout to prevent hanging
-        const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Username fetch timeout')), 5000);
-        });
-
-        const fetchPromise = supabase
+        const { data: profiles, error } = await supabase
           .from('profiles')
           .select('id, username')
           .in('id', batch);
 
-        const { data: profiles, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
-
         if (error) {
-          console.error(`[Presence] Error fetching usernames (batch ${i / batchSize + 1}):`, {
-            status: error.status,
-            message: error.message,
-            details: error.details,
-            hint: error.hint,
-            batchSize: batch.length,
-            ids: batch
-          });
-          // Continue to next batch instead of failing entirely
+          console.error(`[Presence] Error fetching usernames batch:`, error);
           continue;
         }
 

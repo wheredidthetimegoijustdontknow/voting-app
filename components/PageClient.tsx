@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import CreatePollForm from './polls/CreatePollForm';
 import PollingPollList from './polls/PollsContainer';
-import DataDiagnostic from './dashboard/DataDiagnostic';
+import AdminHUD from './admin/AdminHUD';
 import type { PollWithResults } from '@/lib/polls/types';
 
 interface PageClientProps {
@@ -47,13 +47,6 @@ export default function PageClient({ polls, userId }: PageClientProps) {
     };
   }, [supabase, router]);
 
-  // Diagnostic log for the user to see in the browser console
-  console.log('[PageClient Diagnostic]', {
-    pollsReceived: polls.length,
-    totalVotesCalculated: totalVotes,
-    avgEngagementCalculated: avgEngagement,
-    pollIds: polls.map(p => p.id)
-  });
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-8">
@@ -132,8 +125,9 @@ export default function PageClient({ polls, userId }: PageClientProps) {
         </div>
       </main>
 
-      {/* Real-time Data Diagnostic Panel */}
-      <DataDiagnostic polls={polls} currentUserId={userId} />
+
+      {/* Admin Simulation HUD - Only for authenticated users in this demo */}
+      {userId && <AdminHUD />}
     </div>
   );
 }

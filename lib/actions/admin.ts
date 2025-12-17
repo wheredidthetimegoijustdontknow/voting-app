@@ -1,6 +1,6 @@
 'use server';
 
-import { createBots, deleteBots, listBots, simulateVoting, clearBotVotes, getBotStats } from '@/lib/admin/bot-manager';
+import { createBots, deleteBots, listBots, simulateSingleStep, clearBotVotes, getBotStats } from '@/lib/admin/bot-manager';
 import { revalidatePath } from 'next/cache';
 
 export async function fetchBots() {
@@ -38,23 +38,16 @@ export async function removeBots(formData: FormData) {
     }
 }
 
-export async function runSimulation() {
-    console.log("Starting simulation run...");
+export async function runSimulationStep() {
     try {
-        const result = await simulateVoting();
-        console.log("Simulation complete:", result);
-
-        revalidatePath('/', 'layout');
-
-        return {
-            success: true,
-            votesCast: result.votesCast,
-            errors: result.errors.length,
-            details: result.details
-        };
+        const result = await simulateSingleStep();
+        if (result.success) {
+            revalidatePath('/', 'layout');
+        }
+        return result;
     } catch (error) {
-        console.error("Simulation failed with error:", error);
-        return { success: false, error: String(error), details: [] };
+        console.error("Simulation step failed:", error);
+        return { success: false, error: String(error) };
     }
 }
 

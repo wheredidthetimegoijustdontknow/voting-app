@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { UserPlus, RefreshCw, Trash2, Eraser, Loader2 } from 'lucide-react';
-import { createNewBots, runSimulation, removeBots, clearAllBotVotes } from '@/lib/actions/admin';
+import { createNewBots, runSimulationStep, removeBots, clearAllBotVotes } from '@/lib/actions/admin';
 import { useToast } from '@/components/ui/ToastContext';
 
 export default function SimulationControls() {
@@ -71,10 +71,10 @@ export default function SimulationControls() {
     };
 
     const handleRunSimulation = () => {
-        handleAction('simulate', runSimulation, (res) =>
-            res.votesCast > 0
-                ? `Simulation complete: ${res.votesCast} votes cast!`
-                : 'Simulation complete: No new votes cast (bots have already voted on all polls).'
+        handleAction('simulate', runSimulationStep, (res) =>
+            res.success
+                ? `Simulation step complete!`
+                : `Simulation step failed: ${res.error}`
         );
     };
 

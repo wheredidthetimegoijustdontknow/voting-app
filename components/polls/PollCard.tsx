@@ -5,7 +5,7 @@ import VoteButton from './VoteButton';
 import { EditPollButton } from './EditPollButton';
 import { BarChart3 } from 'lucide-react';
 import PollResultsChart from '../analytics/PollResultsChart';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface PollCardProps {
   poll: PollWithResults;
@@ -17,10 +17,26 @@ interface PollCardProps {
 export default function PollCard({ poll, isSignedIn, onVoteSuccess, currentUserId }: PollCardProps) {
   const isCreator = currentUserId === poll.user_id;
   const [showChart, setShowChart] = useState(false);
+  const [isGlowing, setIsGlowing] = useState(false);
+  const prevVotesRef = useRef(poll.total_votes);
+
+  useEffect(() => {
+    if (poll.total_votes > prevVotesRef.current) {
+      // Use setTimeout to avoid synchronous setState inside useEffect warning
+      const glowTimer = setTimeout(() => setIsGlowing(true), 0);
+      const resetTimer = setTimeout(() => setIsGlowing(false), 1500);
+      prevVotesRef.current = poll.total_votes;
+      return () => {
+        clearTimeout(glowTimer);
+        clearTimeout(resetTimer);
+      };
+    }
+    prevVotesRef.current = poll.total_votes;
+  }, [poll.total_votes]);
 
   return (
     <div
-      className="card group transition-all duration-100 hover:ring-1"
+      className={`card group transition-all duration-100 hover:ring-1 ${isGlowing ? 'animate-vote-glow' : ''}`}
       style={{
         backgroundColor: 'var(--color-surface)',
         borderColor: 'var(--color-border-default)',

@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
 export default function AuthButton() {
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [clientReady, setClientReady] = useState(false);
+  const router = useRouter();
   const supabase = createClient();
 
   useEffect(() => {
@@ -68,14 +70,16 @@ export default function AuthButton() {
       console.error('Sign out error:', error);
     } else {
       setUser(null);
+      // Refresh to update server-side session state (PageClient's userId prop)
+      router.refresh();
     }
     setLoading(false);
   };
 
   if (loading) {
     return (
-      <button 
-        disabled 
+      <button
+        disabled
         style={{
           padding: '8px 16px',
           backgroundColor: 'var(--color-text-muted)',
@@ -99,9 +103,9 @@ export default function AuthButton() {
   if (user) {
     return (
       <div className="flex items-center gap-3">
-        <span 
+        <span
           className="text-body-sm"
-          style={{ 
+          style={{
             color: 'var(--color-text-secondary)',
             fontSize: 'var(--font-size-sm)'
           }}

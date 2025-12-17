@@ -149,7 +149,7 @@ export async function listBots(): Promise<BotUser[]> {
         });
     }
 
-    return profiles.map(p => ({
+    return profiles.map((p: any) => ({
         id: p.id,
         email: p.email || '',
         username: p.username,
@@ -173,101 +173,72 @@ export async function getBotStats(): Promise<{ totalBots: number; totalBotVotes:
     };
 }
 
-export async function simulateVoting(pollId?: string): Promise<{ votesCast: number; errors: any[]; details: any[] }> {
+export async function simulateSingleStep(): Promise<{ success: boolean; vote?: any; error?: string }> {
     const supabase = getSupabaseAdmin();
-    const errors: any[] = [];
-    const details: any[] = [];
 
-    console.log("[bot-manager] simulateVoting: Fetching bots...");
-    const bots = await listBots();
-    if (bots.length === 0) {
-        console.log("[bot-manager] simulateVoting: No bots found.");
-        return { votesCast: 0, errors: [], details: [] };
-    }
+    try {
+        // 1. Get bots and polls
+        const bots = await listBots();
+        const { data: polls, error: pollError } = await supabase.from('polls').select('id, question_text');
 
-    let polls = [];
-    if (pollId) {
-        // FIXED: use question_text instead of question
-        const { data, error } = await supabase.from('polls').select('id, question_text').eq('id', pollId);
-        if (error) {
-            console.error("[bot-manager] simulateVoting: Error fetching target poll:", error);
-            return { votesCast: 0, errors: [error], details: [] };
+        if (pollError) throw pollError;
+        if (bots.length === 0 || !polls || polls.length === 0) {
+            return { success: false, error: "No bots or polls available" };
         }
-        polls = data || [];
-    } else {
-        // FIXED: use question_text instead of question
-        const { data, error } = await supabase.from('polls').select('id, question_text');
-        if (error) {
-            console.error("[bot-manager] simulateVoting: Error fetching polls:", error);
-            return { votesCast: 0, errors: [error], details: [] };
+
+        // 2. Pick a random poll
+        const poll = polls[Math.floor(Math.random() * polls.length)];
+
+        // 3. Pick a random bot that hasn't voted on this poll
+        // First, get all votes for this poll
+        const { data: existingVotes, error: voteError } = await supabase
+            .from('votes')
+            .select('user_id')
+            .eq('poll_id', poll.id);
+
+        if (voteError) throw voteError;
+
+        const votedUserIds = new Set((existingVotes || []).map(v => v.user_id));
+        const availableBots = bots.filter(bot => !votedUserIds.has(bot.id));
+
+        if (availableBots.length === 0) {
+            return { success: false, error: "All bots have voted on this poll" };
         }
-        polls = data || [];
-    }
 
-    if (polls.length === 0) {
-        console.log("[bot-manager] simulateVoting: No polls found.");
-        return { votesCast: 0, errors: [], details: [] };
-    }
-    console.log(`[bot-manager] simulateVoting: Found ${bots.length} bots and ${polls.length} polls.`);
+        const bot = availableBots[Math.floor(Math.random() * availableBots.length)];
 
-    // Humanize: Shuffle polls and bots to avoid predictable sequences
-    const shuffledPolls = [...polls].sort(() => Math.random() - 0.5);
-    const shuffledBots = [...bots].sort(() => Math.random() - 0.5);
-
-    console.log(`[bot-manager] simulateVoting: Humanizing simulation...`);
-
-    let votesCast = 0;
-
-    for (const poll of shuffledPolls) {
-        const { data: choices, error: choicesError } = await supabase.from('polls_choices').select('choice').eq('poll_id', poll.id);
+        // 4. Get choices for the poll
+        const { data: choices, error: choicesError } = await supabase
+            .from('polls_choices')
+            .select('choice')
+            .eq('poll_id', poll.id);
 
         if (choicesError || !choices || choices.length === 0) {
-            if (choicesError) {
-                console.error(`[bot-manager] Error fetching choices for poll ${poll.id}:`, choicesError);
-                errors.push(choicesError);
-            }
-            continue;
+            return { success: false, error: "No choices found for poll" };
         }
 
-        for (const bot of shuffledBots) {
-            const { data: existing, error: checkError } = await supabase.from('votes').select('id').eq('poll_id', poll.id).eq('user_id', bot.id).single();
+        // 5. Cast vote
+        const randomChoice = choices[Math.floor(Math.random() * choices.length)].choice;
+        const { error: insertError } = await supabase.from('votes').insert({
+            poll_id: poll.id,
+            user_id: bot.id,
+            choice: randomChoice
+        });
 
-            if (checkError && checkError.code !== 'PGRST116') {
-                console.error(`[bot-manager] Error checking existing vote for bot ${bot.id}:`, checkError);
-                errors.push(checkError);
-                continue;
+        if (insertError) throw insertError;
+
+        return {
+            success: true,
+            vote: {
+                bot: bot.username,
+                poll: poll.question_text,
+                choice: randomChoice
             }
-
-            if (!existing) {
-                // Humanize: Random delay between 500ms and 2000ms
-                const delay = Math.floor(Math.random() * (2000 - 500 + 1)) + 500;
-                await sleep(delay);
-
-                const randomChoice = choices[Math.floor(Math.random() * choices.length)].choice;
-                const { error: insertError } = await supabase.from('votes').insert({
-                    poll_id: poll.id,
-                    user_id: bot.id,
-                    choice: randomChoice
-                });
-
-                if (insertError) {
-                    console.error(`[bot-manager] Failed to cast vote: ${bot.username} on ${poll.question_text}`, insertError.message);
-                    errors.push(insertError);
-                } else {
-                    votesCast++;
-                    console.log(`[bot-manager] VOTE CAST (${delay}ms delay): ${bot.username} -> "${randomChoice}" on "${poll.question_text}"`);
-                    details.push({
-                        bot: bot.username,
-                        poll: poll.question_text,
-                        choice: randomChoice
-                    });
-                }
-            }
-        }
+        };
+    } catch (error: any) {
+        console.error("[bot-manager] simulateSingleStep error:", error);
+        return { success: false, error: error.message };
     }
-
-    console.log(`[bot-manager] simulateVoting: Complete. Votes cast: ${votesCast}`);
-    return { votesCast, errors, details };
 }
 
 export async function clearBotVotes(): Promise<{ deleted: number; errors: any[] }> {
