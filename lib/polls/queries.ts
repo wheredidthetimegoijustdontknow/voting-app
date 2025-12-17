@@ -10,17 +10,23 @@ import { aggregateVotes } from './helpers';
  * ✅ Correct: .select('id, created_at, user_id, question_text')
  * ❌ Wrong: .select(id, created_at, user_id, question_text)
  */
-export async function fetchPollsWithResults(): Promise<PollWithResults[]> {
+export async function fetchPollsWithResults(filterCreatorId?: string): Promise<PollWithResults[]> {
   const supabase = await createServerSupabaseClient();
 
   // Get current user
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Fetch all polls
-  const { data: polls, error: pollsError } = await supabase
+  // Fetch polls
+  let query = supabase
     .from('polls')
     .select('id, created_at, user_id, question_text')
     .order('created_at', { ascending: false });
+
+  if (filterCreatorId) {
+    query = query.eq('user_id', filterCreatorId);
+  }
+
+  const { data: polls, error: pollsError } = await query;
 
   if (pollsError) {
     console.error('Error fetching polls:', pollsError);

@@ -18,18 +18,38 @@ export const metadata: Metadata = {
   description: "A modern real-time voting application with light and dark themes",
 };
 
-export default function RootLayout({
+import { ToastProvider } from "@/components/ui/ToastContext";
+import { VoteToastListener } from "@/components/polls/VoteToastListener";
+import AppLayout from "@/components/AppLayout";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { getCurrentProfile } from "@/app/actions/profile";
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const supabase = await createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  let initialUsername: string | undefined;
+  if (user) {
+    const profileRes = await getCurrentProfile();
+    initialUsername = profileRes.data?.username;
+  }
+
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider>
-          {children}
+          <ToastProvider>
+            <VoteToastListener />
+            <AppLayout userId={user?.id || null} initialUsername={initialUsername}>
+              {children}
+            </AppLayout>
+          </ToastProvider>
         </ThemeProvider>
       </body>
     </html>

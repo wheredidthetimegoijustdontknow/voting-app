@@ -106,19 +106,18 @@ export function Button({
   };
 
   const hoverStyles: React.CSSProperties = !disabled ? {
-    transform: 'translateY(-1px)',
-    boxShadow: 'none',
-    filter: 'brightness(0.95)',
+    boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+    filter: 'brightness(1.1)',
   } : {};
 
   const activeStyles: React.CSSProperties = !disabled ? {
-    transform: 'translateY(0)',
+    transform: 'translateY(1px)',
     filter: 'brightness(0.9)',
   } : {};
 
   const focusStyles: React.CSSProperties = !disabled ? {
     outline: 'none',
-    boxShadow: '0 0 0 2px var(--color-background), 0 0 0 4px var(--color-primary)',
+    boxShadow: '0 0 0 2px var(--color-background), 0 0 0 2px var(--color-primary)',
   } : {};
 
   return (

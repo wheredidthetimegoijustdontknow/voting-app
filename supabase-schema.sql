@@ -1,24 +1,31 @@
 -- Enable necessary extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Profiles table schema (simplified for real-time voting)
-CREATE TABLE IF NOT EXISTS profiles (
-    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-    username TEXT UNIQUE NOT NULL,
-    email TEXT,
-    avatar_url TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
+-- Profiles table schema
+create table public.profiles (
+  id uuid not null default auth.uid (),
+  username text not null,
+  created_at timestamp with time zone not null default now(),
+  updated_at timestamp with time zone not null default timezone ('utc'::text, now()),
+  email text null,
+  constraint profiles_pkey primary key (id),
+  constraint profiles_username_key unique (username)
+) TABLESPACE pg_default;
+
+create unique INDEX IF not exists profiles_username_idx on public.profiles using btree (username) TABLESPACE pg_default;
 
 -- Polls table
-CREATE TABLE IF NOT EXISTS polls (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-    question_text TEXT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
+create table public.polls (
+  id uuid not null default gen_random_uuid (),
+  created_at timestamp with time zone null default now(),
+  user_id uuid not null,
+  question_text text not null,
+  updated_at timestamp with time zone not null default timezone ('utc'::text, now()),
+  constraint polls_pkey primary key (id),
+  constraint polls_user_id_fkey foreign KEY (user_id) references profiles (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists idx_polls_user_id on public.polls using btree (user_id) TABLESPACE pg_default;
 
 -- Poll choices table
 CREATE TABLE IF NOT EXISTS polls_choices (
@@ -103,7 +110,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE polls_choices;
 ALTER PUBLICATION supabase_realtime ADD TABLE votes;
 
 -- Create indexes for better performance
-CREATE INDEX IF NOT EXISTS idx_polls_user_id ON polls(user_id);
 CREATE INDEX IF NOT EXISTS idx_polls_choices_poll_id ON polls_choices(poll_id);
 CREATE INDEX IF NOT EXISTS idx_votes_poll_id ON votes(poll_id);
 CREATE INDEX IF NOT EXISTS idx_votes_user_id ON votes(user_id);

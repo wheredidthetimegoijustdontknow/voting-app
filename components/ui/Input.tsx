@@ -64,7 +64,7 @@ export function Input({
   const focusStyles = {
     outline: 'none',
     borderColor: 'var(--color-primary)',
-    boxShadow: '0 0 0 3px rgba(47, 107, 255, 0.1)',
+    boxShadow: '0 0 0 1px var(--color-primary)',
   };
 
   const errorStyles = error ? {
@@ -87,14 +87,14 @@ export function Input({
           {label}
         </label>
       )}
-      
+
       <input
         className={className}
         disabled={disabled}
         style={{ ...baseStyles, ...errorStyles, ...style }}
         {...props}
       />
-      
+
       {error && (
         <p
           className="text-body-sm"
@@ -107,7 +107,7 @@ export function Input({
           {error}
         </p>
       )}
-      
+
       {helperText && !error && (
         <p
           className="text-body-sm"

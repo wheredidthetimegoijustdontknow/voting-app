@@ -6,50 +6,50 @@
 
 /* Light Theme (Default) */
 :root {
-  /* Primary Colors */
-  --color-primary: #1F4FD8;
-  --color-primary-hover: #1A46C7;
-  --color-primary-active: #163BA8;
-  --color-primary-accent: #2F6BFF;
+  /* Primary Colors - Indigo */
+  --color-primary: #4F46E5;        /* Indigo 600 */
+  --color-primary-hover: #4338CA;  /* Indigo 700 */
+  --color-primary-active: #3730A3; /* Indigo 800 */
+  --color-primary-accent: #6366F1; /* Indigo 500 */
   
-  /* Background Colors */
-  --color-background: #F8FAFC;
-  --color-surface: #FFFFFF;
-  --color-elevated: #FFFFFF;
+  /* Background Colors - Zinc */
+  --color-background: #F4F4F5;     /* Zinc 100 */
+  --color-surface: #FFFFFF;        /* White */
+  --color-elevated: #FFFFFF;       /* White */
   
-  /* Text Colors */
-  --color-text-primary: #111827;
-  --color-text-secondary: #6B7280;
-  --color-text-muted: #9CA3AF;
-  --color-text-inverse: #FFFFFF;
+  /* Text Colors - Zinc */
+  --color-text-primary: #18181B;   /* Zinc 900 */
+  --color-text-secondary: #52525B; /* Zinc 600 */
+  --color-text-muted: #71717A;     /* Zinc 500 */
+  --color-text-inverse: #FFFFFF;   /* White */
   
-  /* Border Colors */
-  --color-border-light: #F3F4F6;
-  --color-border-default: #E5E7EB;
-  --color-border-strong: #D1D5DB;
+  /* Border Colors - Zinc */
+  --color-border-light: #F4F4F5;   /* Zinc 100 */
+  --color-border-default: #E4E4E7; /* Zinc 200 */
+  --color-border-strong: #D4D4D8;  /* Zinc 300 */
   
   /* Semantic Colors */
-  --color-success: #22C55E;
-  --color-success-bg: #F0FDF4;
-  --color-success-border: #BBF7D0;
+  --color-success: #10B981;        /* Emerald 500 */
+  --color-success-bg: #ECFDF5;     /* Emerald 50 */
+  --color-success-border: #D1FAE5; /* Emerald 100 */
   
-  --color-warning: #F59E0B;
-  --color-warning-bg: #FFFBEB;
-  --color-warning-border: #FED7AA;
+  --color-warning: #F59E0B;        /* Amber 500 */
+  --color-warning-bg: #FFFBEB;     /* Amber 50 */
+  --color-warning-border: #FEF3C7; /* Amber 100 */
   
-  --color-info: #3B82F6;
-  --color-info-bg: #EFF6FF;
-  --color-info-border: #BFDBFE;
+  --color-info: #3B82F6;           /* Blue 500 */
+  --color-info-bg: #EFF6FF;        /* Blue 50 */
+  --color-info-border: #DBEAFE;    /* Blue 100 */
   
-  --color-error: #EF4444;
-  --color-error-bg: #FEF2F2;
-  --color-error-border: #FECACA;
+  --color-error: #EF4444;          /* Red 500 */
+  --color-error-bg: #FEF2F2;       /* Red 50 */
+  --color-error-border: #FEE2E2;   /* Red 100 */
   
   /* Interactive States */
-  --color-interactive-hover: #F9FAFB;
-  --color-interactive-active: #F3F4F6;
-  --color-interactive-focus: #2F6BFF;
-  --color-interactive-disabled: #F3F4F6;
+  --color-interactive-hover: #F4F4F5; /* Zinc 100 */
+  --color-interactive-active: #E4E4E7; /* Zinc 200 */
+  --color-interactive-focus: #4F46E5; /* Indigo 600 */
+  --color-interactive-disabled: #F4F4F5; /* Zinc 100 */
   
   /* Spacing */
   --spacing-xs: 4px;
@@ -68,6 +68,7 @@
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
+  --radius-full: 9999px;
   
   /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
@@ -78,49 +79,49 @@
 /* Dark Theme */
 [data-theme="dark"] {
   /* Primary Colors */
-  --color-primary: #3B82F6;
-  --color-primary-hover: #2563EB;
-  --color-primary-active: #1D4ED8;
-  --color-primary-accent: #60A5FA;
+  --color-primary: #6366F1;        /* Indigo 500 */
+  --color-primary-hover: #818CF8;  /* Indigo 400 */
+  --color-primary-active: #A5B4FC; /* Indigo 300 */
+  --color-primary-accent: #4F46E5; /* Indigo 600 */
   
   /* Background Colors */
-  --color-background: #0F172A;
-  --color-surface: #1E293B;
-  --color-elevated: #334155;
+  --color-background: #000000;     /* Pure Black */
+  --color-surface: #121212;        /* Dark Grey */
+  --color-elevated: #18181B;       /* Zinc 900 */
   
   /* Text Colors */
-  --color-text-primary: #F8FAFC;
-  --color-text-secondary: #CBD5E1;
-  --color-text-muted: #94A3B8;
-  --color-text-inverse: #0F172A;
+  --color-text-primary: #FAFAFA;   /* Zinc 50 */
+  --color-text-secondary: #A1A1AA; /* Zinc 400 */
+  --color-text-muted: #71717A;     /* Zinc 500 */
+  --color-text-inverse: #000000;   /* Black */
   
   /* Border Colors */
-  --color-border-light: #334155;
-  --color-border-default: #475569;
-  --color-border-strong: #64748B;
+  --color-border-light: #18181B;   /* Zinc 900 */
+  --color-border-default: #27272A; /* Zinc 800 */
+  --color-border-strong: #3F3F46;  /* Zinc 700 */
   
   /* Semantic Colors */
-  --color-success: #22C55E;
-  --color-success-bg: #052E16;
-  --color-success-border: #14532D;
+  --color-success: #34D399;        /* Emerald 400 */
+  --color-success-bg: #064E3B;     /* Emerald 900 */
+  --color-success-border: #065F46; /* Emerald 800 */
   
-  --color-warning: #F59E0B;
-  --color-warning-bg: #451A03;
-  --color-warning-border: #92400E;
+  --color-warning: #FBBF24;        /* Amber 400 */
+  --color-warning-bg: #451A03;     /* Amber 900 */
+  --color-warning-border: #78350F; /* Amber 800 */
   
-  --color-info: #3B82F6;
-  --color-info-bg: #0C1829;
-  --color-info-border: #1E3A8A;
+  --color-info: #60A5FA;           /* Blue 400 */
+  --color-info-bg: #172554;        /* Blue 950 */
+  --color-info-border: #1E3A8A;    /* Blue 900 */
   
-  --color-error: #EF4444;
-  --color-error-bg: #450A0A;
-  --color-error-border: #7F1D1D;
+  --color-error: #F87171;          /* Red 400 */
+  --color-error-bg: #450A0A;       /* Red 900 */
+  --color-error-border: #7F1D1D;   /* Red 900 */
   
   /* Interactive States */
-  --color-interactive-hover: #334155;
-  --color-interactive-active: #475569;
-  --color-interactive-focus: #60A5FA;
-  --color-interactive-disabled: #1E293B;
+  --color-interactive-hover: #18181B; /* Zinc 900 */
+  --color-interactive-active: #27272A; /* Zinc 800 */
+  --color-interactive-focus: #6366F1; /* Indigo 500 */
+  --color-interactive-disabled: #18181B; /* Zinc 900 */
 }
 
 /* Tailwind Theme Configuration */

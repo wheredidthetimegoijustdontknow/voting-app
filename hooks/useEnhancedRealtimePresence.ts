@@ -44,42 +44,59 @@ export function useEnhancedRealtimePresence({
   const isTrackingRef = useRef(false);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isConnectingRef = useRef(false);
-  
+
   // Cache for holding users after they disconnect
   const userCacheRef = useRef<Map<string, PresenceUser>>(new Map());
   const cacheCleanupIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Enhanced username fetching with timeout
+  // Enhanced username fetching with batching and error details
   const fetchUsernames = useCallback(async (userIds: string[]): Promise<Record<string, string>> => {
-    if (userIds.length === 0) return {};
+    // Deduplicate IDs to minimize requests
+    const uniqueIds = Array.from(new Set(userIds.filter(id => !!id)));
+    if (uniqueIds.length === 0) return {};
+
+    const usernameMap: Record<string, string> = {};
+    const batchSize = 30; // Small batch size to avoid URL length limits
 
     try {
-      // Add timeout to prevent hanging
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Username fetch timeout')), 5000);
-      });
+      for (let i = 0; i < uniqueIds.length; i += batchSize) {
+        const batch = uniqueIds.slice(i, i + batchSize);
 
-      const fetchPromise = supabase
-        .from('profiles')
-        .select('id, username')
-        .in('id', userIds);
+        // Add timeout to prevent hanging
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Username fetch timeout')), 5000);
+        });
 
-      const { data: profiles, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
+        const fetchPromise = supabase
+          .from('profiles')
+          .select('id, username')
+          .in('id', batch);
 
-      if (error) {
-        console.error('Error fetching usernames:', error);
-        return {};
+        const { data: profiles, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
+
+        if (error) {
+          console.error(`[Presence] Error fetching usernames (batch ${i / batchSize + 1}):`, {
+            status: error.status,
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            batchSize: batch.length,
+            ids: batch
+          });
+          // Continue to next batch instead of failing entirely
+          continue;
+        }
+
+        profiles?.forEach((profile: any) => {
+          if (profile.id && profile.username) {
+            usernameMap[profile.id] = profile.username;
+          }
+        });
       }
-
-      // Create a map of userId -> username
-      const usernameMap: Record<string, string> = {};
-      profiles?.forEach((profile: any) => {
-        usernameMap[profile.id] = profile.username;
-      });
 
       return usernameMap;
     } catch (error) {
-      console.error('Error in fetchUsernames:', error);
+      console.error('[Presence] Fatal error in fetchUsernames:', error);
       return {};
     }
   }, [supabase]);
@@ -111,7 +128,7 @@ export function useEnhancedRealtimePresence({
     const allUsersMap = new Map<string, PresenceUser>();
     cachedUsers.forEach(user => allUsersMap.set(user.id, user));
     usersWithUsernames.forEach(user => allUsersMap.set(user.id, user));
-    
+
     const finalUsers = Array.from(allUsersMap.values());
 
     setPresenceState(prev => ({
@@ -247,9 +264,9 @@ export function useEnhancedRealtimePresence({
 
         if (status === 'SUBSCRIBED') {
           console.log('✅ Successfully subscribed to presence channel:', channelName);
-          
+
           setPresenceState(prev => ({ ...prev, isConnected: true, connectionError: null }));
-          
+
           // Track presence with timeout
           try {
             const timeoutPromise = new Promise((_, reject) => {
@@ -266,11 +283,11 @@ export function useEnhancedRealtimePresence({
 
             if (trackStatus === 'ok') {
               isTrackingRef.current = true;
-              
+
               // Start heartbeat to keep presence active (every 15 seconds)
               heartbeatIntervalRef.current = setInterval(sendHeartbeat, 15000);
               console.log('Presence heartbeat started (15s interval)');
-              
+
               // Send initial heartbeat
               await sendHeartbeat();
             } else {
@@ -284,7 +301,7 @@ export function useEnhancedRealtimePresence({
               isConnected: false,
               connectionError: 'Failed to track presence'
             }));
-            
+
             // Attempt reconnection
             if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
             reconnectTimeoutRef.current = setTimeout(() => {
@@ -300,7 +317,7 @@ export function useEnhancedRealtimePresence({
             isConnected: false,
             connectionError: 'Channel subscription failed'
           }));
-          
+
           // Attempt reconnection after delay
           if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
           reconnectTimeoutRef.current = setTimeout(() => {
@@ -314,7 +331,7 @@ export function useEnhancedRealtimePresence({
             isConnected: false,
             connectionError: 'Connection timed out'
           }));
-          
+
           // Attempt reconnection with longer delay
           if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
           reconnectTimeoutRef.current = setTimeout(() => {
@@ -339,7 +356,7 @@ export function useEnhancedRealtimePresence({
     cacheCleanupIntervalRef.current = setInterval(() => {
       const now = Date.now();
       let removedCount = 0;
-      
+
       // Remove users who have been offline for longer than cache duration
       for (const [userId, user] of userCacheRef.current.entries()) {
         const timeSinceLastSeen = now - (user.last_seen || 0);
@@ -348,7 +365,7 @@ export function useEnhancedRealtimePresence({
           removedCount++;
         }
       }
-      
+
       if (removedCount > 0) {
         console.log(`🧹 Cleaned up ${removedCount} expired users from cache`);
         // Trigger re-render with updated cache
@@ -359,32 +376,32 @@ export function useEnhancedRealtimePresence({
     // Enhanced cleanup function
     return () => {
       console.log('Cleaning up presence subscription');
-      
+
       // Clear all timeouts
       if (heartbeatIntervalRef.current) {
         clearInterval(heartbeatIntervalRef.current);
         heartbeatIntervalRef.current = null;
       }
-      
+
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
         reconnectTimeoutRef.current = null;
       }
-      
+
       if (cacheCleanupIntervalRef.current) {
         clearInterval(cacheCleanupIntervalRef.current);
         cacheCleanupIntervalRef.current = null;
       }
-      
+
       // Remove channel
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
-      
+
       // Clear cache
       userCacheRef.current.clear();
-      
+
       isTrackingRef.current = false;
       isConnectingRef.current = false;
       setPresenceState({

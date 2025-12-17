@@ -178,3 +178,73 @@ export async function updatePoll(pollId: string, question_text: string): Promise
     return { success: false, error: 'An unexpected error occurred.' };
   }
 }
+
+// --- 4. Define Zod Schema for Poll Creation Data ---
+const CreatePollSchema = z.object({
+  question_text: z.string().min(5, { message: "Question must be at least 5 characters long." }).max(200, { message: "Question must be less than 200 characters." }),
+  choices: z.array(z.string().min(1, { message: "Choice cannot be empty." })).min(2, { message: "At least 2 choices are required." }),
+});
+
+/**
+ * Handles secure creation of a new poll.
+ */
+export async function createPoll(formData: { question_text: string; choices: string[] }): Promise<ActionResponse> {
+  const validationResult = CreatePollSchema.safeParse(formData);
+
+  if (!validationResult.success) {
+    return {
+      success: false,
+      error: validationResult.error.issues[0].message
+    };
+  }
+
+  const { question_text, choices } = validationResult.data;
+
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: 'Authentication required.' };
+    }
+
+    // 1. Insert Poll
+    const { data: poll, error: pollError } = await supabase
+      .from('polls')
+      .insert({
+        question_text,
+        user_id: user.id,
+      })
+      .select('id')
+      .single();
+
+    if (pollError || !poll) {
+      console.error('Error creating poll:', pollError);
+      return { success: false, error: 'Failed to create poll.' };
+    }
+
+    // 2. Insert Choices
+    const choicesPayload = choices.map((choice) => ({
+      poll_id: poll.id,
+      choice: choice.trim(),
+    }));
+
+    const { error: choicesError } = await supabase
+      .from('polls_choices')
+      .insert(choicesPayload);
+
+    if (choicesError) {
+      console.error('Error creating choices:', choicesError);
+      // Ideally we would rollback the poll creation here, but for now we'll just error out.
+      // A Supabase RPC function would be better for atomicity.
+      return { success: false, error: `Failed to create choices: ${choicesError.message}` };
+    }
+
+    revalidatePath('/');
+    return { success: true };
+
+  } catch (e) {
+    console.error('Unexpected error in createPoll:', e);
+    return { success: false, error: 'An unexpected error occurred.' };
+  }
+}

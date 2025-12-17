@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voting App - Design Mockup</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#4F46E5', // Indigo 600
+                        primaryHover: '#4338CA', // Indigo 700
+                        primaryDark: '#818CF8', // Indigo 400
+
+                        // Light Mode Base
+                        background: '#F4F4F5', // Zinc 100 - Integrated background
+                        card: '#FFFFFF',       // Zinc 50 - Card background
+                        surface: '#FAFAFA',
+                        border: '#E4E4E7', // Zinc 200
+                        text: '#18181B', // Zinc 900
+                        muted: '#71717A', // Zinc 500
+
+                        // Dark Mode Base
+                        darkBackground: '#000000', // Pure Black
+                        darkCard: '#121212',      // Slightly lighter black
+                        darkSurface: '#18181B', // Zinc 900
+                        darkBorder: '#27272A', // Zinc 800
+                        darkText: '#FAFAFA', // Zinc 50
+                        darkMuted: '#A1A1AA', // Zinc 400
+                    }
+                }
+            }
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+            } else {
+                html.classList.add('dark');
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background dark:bg-darkBackground text-text dark:text-darkText min-h-screen flex flex-col transition-colors duration-300">
+
+    <!-- Navbar -->
+    <header
+        class="border-b border-border dark:border-darkBorder sticky top-0 bg-card/80 dark:bg-darkCard/80 backdrop-blur-md z-10 transition-colors duration-300">
+        <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div
+                    class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-500/20">
+                    V</div>
+                <span class="font-semibold text-lg tracking-tight">Voting App</span>
+            </div>
+            <nav class="flex items-center gap-6">
+                <a href="#"
+                    class="text-sm font-medium hover:text-primary dark:hover:text-primaryDark transition-colors">Dashboard</a>
+                <a href="#"
+                    class="text-sm font-medium text-muted dark:text-darkMuted hover:text-primary dark:hover:text-primaryDark transition-colors">Public
+                    Polls</a>
+                <div class="h-4 w-px bg-border dark:bg-darkBorder"></div>
+                <button onclick="toggleTheme()"
+                    class="p-2 rounded-md hover:bg-surface dark:hover:bg-darkSurface text-muted dark:text-darkMuted transition-colors">
+                    <svg class="hidden dark:block w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                    <svg class="block dark:hidden w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
+                <button
+                    class="text-sm font-medium text-muted dark:text-darkMuted hover:text-primary dark:hover:text-primaryDark transition-colors">Sign
+                    Out</button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content Wrapper with Separation -->
+    <div class="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-8">
+        <main
+            class="bg-card dark:bg-darkCard rounded-2xl shadow-sm border border-border dark:border-darkBorder p-8 min-h-[80vh]">
+
+            <!-- Header Section -->
+            <div class="flex items-end justify-between mb-10">
+                <div>
+                    <h1 class="text-3xl font-bold tracking-tight mb-2">Dashboard</h1>
+                    <p class="text-muted dark:text-darkMuted">Manage your polls and view results.</p>
+                </div>
+                <button
+                    class="bg-primary hover:bg-primaryHover text-white px-5 py-2.5 rounded-lg font-medium text-sm transition-all shadow-sm hover:shadow-md flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Create Poll
+                </button>
+            </div>
+
+            <!-- Stats Overview -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                <div
+                    class="p-6 rounded-xl border border-border dark:border-darkBorder bg-surface dark:bg-darkSurface hover:border-primary dark:hover:border-primaryDark hover:ring-1 hover:ring-primary dark:hover:ring-primaryDark transition-all duration-100">
+                    <div class="text-sm font-medium text-muted dark:text-darkMuted mb-1">Total Active Polls</div>
+                    <div class="text-3xl font-bold">12</div>
+                </div>
+                <div
+                    class="p-6 rounded-xl border border-border dark:border-darkBorder bg-surface dark:bg-darkSurface hover:border-primary dark:hover:border-primaryDark hover:ring-1 hover:ring-primary dark:hover:ring-primaryDark transition-all duration-100">
+                    <div class="text-sm font-medium text-muted dark:text-darkMuted mb-1">Total Votes</div>
+                    <div class="text-3xl font-bold">1,429</div>
+                </div>
+                <div
+                    class="p-6 rounded-xl border border-border dark:border-darkBorder bg-surface dark:bg-darkSurface hover:border-primary dark:hover:border-primaryDark hover:ring-1 hover:ring-primary dark:hover:ring-primaryDark transition-all duration-100">
+                    <div class="text-sm font-medium text-muted dark:text-darkMuted mb-1">Avg. Engagement</div>
+                    <div class="text-3xl font-bold text-primary dark:text-primaryDark">84%</div>
+                </div>
+            </div>
+
+            <!-- Polls List -->
+            <div class="space-y-4">
+                <div
+                    class="flex items-center justify-between text-sm text-muted dark:text-darkMuted pb-2 border-b border-border dark:border-darkBorder mb-4">
+                    <span class="font-medium">Recent Polls</span>
+                    <span class="cursor-pointer hover:text-primary dark:hover:text-primaryDark transition-colors">View
+                        All &rarr;</span>
+                </div>
+
+                <!-- Poll Item 1 -->
+                <div
+                    class="group flex items-center justify-between p-5 rounded-xl border border-border dark:border-darkBorder hover:border-primary dark:hover:border-primaryDark hover:ring-1 hover:ring-primary dark:hover:ring-primaryDark hover:shadow-md bg-white dark:bg-darkSurface transition-all duration-100 cursor-pointer">
+                    <div class="flex items-start gap-4">
+                        <div
+                            class="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-100 dark:border-emerald-900/30">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3
+                                class="font-semibold text-base mb-1 group-hover:text-primary dark:group-hover:text-primaryDark transition-colors">
+                                Team Building Event Location?</h3>
+                            <p class="text-sm text-muted dark:text-darkMuted">Created 2 hours ago &bull; 45 votes</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span
+                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30">
+                            Active
+                        </span>
+                        <svg class="text-gray-300 dark:text-zinc-600 group-hover:text-primary dark:group-hover:text-primaryDark transition-colors"
+                            xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Poll Item 2 -->
+                <div
+                    class="group flex items-center justify-between p-5 rounded-xl border border-border dark:border-darkBorder hover:border-primary dark:hover:border-primaryDark hover:ring-1 hover:ring-primary dark:hover:ring-primaryDark hover:shadow-md bg-white dark:bg-darkSurface transition-all duration-100 cursor-pointer">
+                    <div class="flex items-start gap-4">
+                        <div
+                            class="w-10 h-10 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-100 dark:border-indigo-900/30">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3
+                                class="font-semibold text-base mb-1 group-hover:text-primary dark:group-hover:text-primaryDark transition-colors">
+                                Q4 Product Roadmap Priorities</h3>
+                            <p class="text-sm text-muted dark:text-darkMuted">Created yesterday &bull; 128 votes</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span
+                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30">
+                            Active
+                        </span>
+                        <svg class="text-gray-300 dark:text-zinc-600 group-hover:text-primary dark:group-hover:text-primaryDark transition-colors"
+                            xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Poll Item 3 -->
+                <div
+                    class="group flex items-center justify-between p-5 rounded-xl border border-border dark:border-darkBorder hover:border-primary dark:hover:border-primaryDark hover:ring-1 hover:ring-primary dark:hover:ring-primaryDark hover:shadow-md bg-white dark:bg-darkSurface transition-all duration-100 cursor-pointer opacity-75">
+                    <div class="flex items-start gap-4">
+                        <div
+                            class="w-10 h-10 rounded-full bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 flex items-center justify-center border border-gray-200 dark:border-zinc-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3
+                                class="font-semibold text-base mb-1 group-hover:text-primary dark:group-hover:text-primaryDark transition-colors">
+                                Lunch Options for Friday</h3>
+                            <p class="text-sm text-muted dark:text-darkMuted">Ended 2 days ago &bull; 32 votes</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span
+                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 border border-gray-200 dark:border-zinc-700">
+                            Ended
+                        </span>
+                        <svg class="text-gray-300 dark:text-zinc-600 group-hover:text-primary dark:group-hover:text-primaryDark transition-colors"
+                            xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </div>
+                </div>
+
+            </div>
+
+        </main>
+    </div>
+</body>
+
+</html>

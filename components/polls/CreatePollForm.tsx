@@ -1,13 +1,16 @@
+// app/components/polls/CreatePollForm.tsx
 'use client';
 
 import { useState } from 'react';
-import { CreatePollRequest, CreatePollResponse } from '@/lib/polls/types';
+import { useRouter } from 'next/navigation';
+import { createPoll } from '@/app/actions/poll';
 
 export default function CreatePollForm() {
   const [questionText, setQuestionText] = useState('');
   const [choices, setChoices] = useState<string[]>(['', '']);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   const addChoice = () => {
     setChoices([...choices, '']);
@@ -29,7 +32,7 @@ export default function CreatePollForm() {
     e.preventDefault();
     setError(null);
 
-    // Validate form
+    // Validate form (Client-side)
     if (!questionText.trim()) {
       setError('Please enter a question');
       return;
@@ -44,27 +47,18 @@ export default function CreatePollForm() {
     setIsSubmitting(true);
 
     try {
-      const request: CreatePollRequest = {
+      // Server Action Call
+      const result = await createPoll({
         question_text: questionText.trim(),
         choices: validChoices,
-      };
-
-      const response = await fetch('/api/polls/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(request),
       });
-
-      const result: CreatePollResponse = await response.json();
 
       if (result.success) {
         // Reset form
         setQuestionText('');
         setChoices(['', '']);
-        // Refresh the page to show the new poll
-        window.location.reload();
+        // Refresh the page data
+        router.refresh();
       } else {
         setError(result.error || 'Failed to create poll');
       }
@@ -77,7 +71,7 @@ export default function CreatePollForm() {
   };
 
   return (
-    <div 
+    <div
       className="card"
       style={{
         backgroundColor: 'var(--color-surface)',
@@ -90,9 +84,9 @@ export default function CreatePollForm() {
         marginBottom: 'var(--spacing-xl)'
       }}
     >
-      <h2 
+      <h2
         className="text-heading-lg"
-        style={{ 
+        style={{
           color: 'var(--color-text-primary)',
           marginBottom: 'var(--spacing-lg)',
           marginTop: 0
@@ -100,12 +94,12 @@ export default function CreatePollForm() {
       >
         Create New Poll
       </h2>
-      
+
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Question Input */}
         <div>
-          <label 
-            htmlFor="question" 
+          <label
+            htmlFor="question"
             className="text-body"
             style={{
               display: 'block',
@@ -141,7 +135,7 @@ export default function CreatePollForm() {
 
         {/* Choices */}
         <div>
-          <label 
+          <label
             className="text-body"
             style={{
               display: 'block',
@@ -209,7 +203,7 @@ export default function CreatePollForm() {
               </div>
             ))}
           </div>
-          
+
           <button
             type="button"
             onClick={addChoice}
@@ -244,7 +238,7 @@ export default function CreatePollForm() {
 
         {/* Error Message */}
         {error && (
-          <div 
+          <div
             className="badge badge-error"
             style={{
               backgroundColor: 'var(--color-error-bg)',
