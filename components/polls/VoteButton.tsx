@@ -6,7 +6,7 @@ interface VoteButtonProps {
   pollId: string;
   choice: string;
   isSelected: boolean;
-  onVoteSuccess?: () => void; // NEW: Add this prop
+  onVoteSuccess?: () => void;
 }
 
 export default function VoteButton({ 
@@ -35,7 +35,7 @@ export default function VoteButton({
         throw new Error(data.error || 'Failed to vote');
       }
 
-      // NEW: Trigger immediate refresh after successful vote
+      // Trigger immediate refresh after successful vote
       if (onVoteSuccess) {
         onVoteSuccess();
       }
@@ -50,7 +50,21 @@ export default function VoteButton({
     return (
       <button
         disabled
-        className="w-full px-4 py-2 bg-green-100 text-green-700 rounded-lg font-medium cursor-not-allowed"
+        style={{
+          width: '100%',
+          padding: '8px 16px',
+          backgroundColor: 'var(--color-success-bg)',
+          color: 'var(--color-success)',
+          border: '1px solid var(--color-success-border)',
+          borderRadius: '6px',
+          fontSize: 'var(--font-size-sm)',
+          fontWeight: '500',
+          fontFamily: 'var(--font-family-sans)',
+          cursor: 'not-allowed',
+          opacity: 0.8,
+          boxShadow: 'none',
+          transition: 'all 0.15s ease',
+        }}
       >
         ✓ Your Vote
       </button>
@@ -62,13 +76,57 @@ export default function VoteButton({
       <button
         onClick={handleVote}
         disabled={isVoting}
-        className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors"
+        style={{
+          width: '100%',
+          padding: '8px 16px',
+          backgroundColor: isVoting ? 'var(--color-primary-hover)' : 'var(--color-primary)',
+          color: 'var(--color-text-inverse)',
+          border: '1px solid var(--color-primary)',
+          borderRadius: '6px',
+          fontSize: 'var(--font-size-sm)',
+          fontWeight: '500',
+          fontFamily: 'var(--font-family-sans)',
+          cursor: isVoting ? 'not-allowed' : 'pointer',
+          transition: 'all 0.15s ease',
+          boxShadow: 'none',
+          transform: 'translateY(0)',
+        }}
+        onMouseEnter={(e) => {
+          if (!isVoting) {
+            e.currentTarget.style.transform = 'translateY(-1px)';
+            e.currentTarget.style.filter = 'brightness(0.95)';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!isVoting) {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.filter = 'brightness(1)';
+          }
+        }}
+        onFocus={(e) => {
+          if (!isVoting) {
+            e.currentTarget.style.outline = 'none';
+            e.currentTarget.style.boxShadow = '0 0 0 2px var(--color-background), 0 0 0 4px var(--color-primary)';
+          }
+        }}
+        onBlur={(e) => {
+          e.currentTarget.style.boxShadow = 'none';
+        }}
       >
         {isVoting ? 'Voting...' : 'Vote'}
       </button>
       
       {error && (
-        <p className="text-sm text-red-600">{error}</p>
+        <p 
+          className="text-body-sm"
+          style={{ 
+            color: 'var(--color-error)',
+            fontSize: 'var(--font-size-sm)',
+            margin: 0
+          }}
+        >
+          {error}
+        </p>
       )}
     </div>
   );

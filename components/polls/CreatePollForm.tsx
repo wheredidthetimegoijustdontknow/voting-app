@@ -77,13 +77,43 @@ export default function CreatePollForm() {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-6 mb-8">
-      <h2 className="text-2xl font-semibold text-black mb-6">Create New Poll</h2>
+    <div 
+      className="card"
+      style={{
+        backgroundColor: 'var(--color-surface)',
+        borderColor: 'var(--color-border-default)',
+        borderWidth: '1px',
+        borderStyle: 'solid',
+        borderRadius: 'var(--radius-lg)',
+        padding: 'var(--spacing-lg)',
+        boxShadow: 'none',
+        marginBottom: 'var(--spacing-xl)'
+      }}
+    >
+      <h2 
+        className="text-heading-lg"
+        style={{ 
+          color: 'var(--color-text-primary)',
+          marginBottom: 'var(--spacing-lg)',
+          marginTop: 0
+        }}
+      >
+        Create New Poll
+      </h2>
       
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Question Input */}
         <div>
-          <label htmlFor="question" className="block text-sm font-medium text-black mb-2">
+          <label 
+            htmlFor="question" 
+            className="text-body"
+            style={{
+              display: 'block',
+              fontWeight: '500',
+              marginBottom: 'var(--spacing-sm)',
+              color: 'var(--color-text-primary)'
+            }}
+          >
             Question
           </label>
           <input
@@ -92,14 +122,34 @@ export default function CreatePollForm() {
             value={questionText}
             onChange={(e) => setQuestionText(e.target.value)}
             placeholder="What would you like to ask?"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-black"
+            className="input"
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              border: '1px solid var(--color-border-default)',
+              borderRadius: '6px',
+              backgroundColor: 'var(--color-surface)',
+              color: 'var(--color-text-primary)',
+              fontSize: 'var(--font-size-base)',
+              fontFamily: 'var(--font-family-sans)',
+              lineHeight: '1.5',
+              transition: 'all 0.2s ease'
+            }}
             disabled={isSubmitting}
           />
         </div>
 
         {/* Choices */}
         <div>
-          <label className="block text-sm font-medium text-black mb-2">
+          <label 
+            className="text-body"
+            style={{
+              display: 'block',
+              fontWeight: '500',
+              marginBottom: 'var(--spacing-sm)',
+              color: 'var(--color-text-primary)'
+            }}
+          >
             Choices
           </label>
           <div className="space-y-3">
@@ -110,15 +160,48 @@ export default function CreatePollForm() {
                   value={choice}
                   onChange={(e) => updateChoice(index, e.target.value)}
                   placeholder={`Choice ${index + 1}`}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-black"
+                  className="input"
+                  style={{
+                    flex: 1,
+                    padding: '10px 12px',
+                    border: '1px solid var(--color-border-default)',
+                    borderRadius: '6px',
+                    backgroundColor: 'var(--color-surface)',
+                    color: 'var(--color-text-primary)',
+                    fontSize: 'var(--font-size-base)',
+                    fontFamily: 'var(--font-family-sans)',
+                    lineHeight: '1.5',
+                    transition: 'all 0.2s ease'
+                  }}
                   disabled={isSubmitting}
                 />
                 {choices.length > 2 && (
                   <button
                     type="button"
                     onClick={() => removeChoice(index)}
-                    className="px-3 py-2 text-red-600 hover:text-red-800 focus:outline-none"
+                    style={{
+                      padding: '10px 12px',
+                      backgroundColor: 'transparent',
+                      color: 'var(--color-error)',
+                      border: '1px solid var(--color-error)',
+                      borderRadius: '6px',
+                      fontSize: 'var(--font-size-sm)',
+                      fontWeight: '500',
+                      fontFamily: 'var(--font-family-sans)',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                      boxShadow: 'none',
+                      transform: 'translateY(0)',
+                    }}
                     disabled={isSubmitting}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                      e.currentTarget.style.filter = 'brightness(0.95)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.filter = 'brightness(1)';
+                    }}
                   >
                     Remove
                   </button>
@@ -130,8 +213,30 @@ export default function CreatePollForm() {
           <button
             type="button"
             onClick={addChoice}
-            className="mt-3 text-indigo-600 hover:text-indigo-800 text-sm font-medium focus:outline-none"
+            style={{
+              marginTop: 'var(--spacing-sm)',
+              padding: '6px 12px',
+              backgroundColor: 'transparent',
+              color: 'var(--color-primary)',
+              border: '1px solid var(--color-primary)',
+              borderRadius: '6px',
+              fontSize: 'var(--font-size-sm)',
+              fontWeight: '500',
+              fontFamily: 'var(--font-family-sans)',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+              boxShadow: 'none',
+              transform: 'translateY(0)',
+            }}
             disabled={isSubmitting}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.filter = 'brightness(0.95)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.filter = 'brightness(1)';
+            }}
           >
             + Add Choice
           </button>
@@ -139,7 +244,19 @@ export default function CreatePollForm() {
 
         {/* Error Message */}
         {error && (
-          <div className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-md p-3">
+          <div 
+            className="badge badge-error"
+            style={{
+              backgroundColor: 'var(--color-error-bg)',
+              borderColor: 'var(--color-error-border)',
+              color: 'var(--color-error)',
+              padding: 'var(--spacing-sm)',
+              borderRadius: 'var(--radius-sm)',
+              borderWidth: '1px',
+              borderStyle: 'solid',
+              fontSize: 'var(--font-size-sm)'
+            }}
+          >
             {error}
           </div>
         )}
@@ -148,7 +265,33 @@ export default function CreatePollForm() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          style={{
+            width: '100%',
+            padding: '10px 16px',
+            backgroundColor: isSubmitting ? 'var(--color-primary-hover)' : 'var(--color-primary)',
+            color: 'var(--color-text-inverse)',
+            border: '1px solid var(--color-primary)',
+            borderRadius: '6px',
+            fontSize: 'var(--font-size-base)',
+            fontWeight: '500',
+            fontFamily: 'var(--font-family-sans)',
+            cursor: isSubmitting ? 'not-allowed' : 'pointer',
+            transition: 'all 0.15s ease',
+            boxShadow: 'none',
+            transform: 'translateY(0)',
+          }}
+          onMouseEnter={(e) => {
+            if (!isSubmitting) {
+              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.filter = 'brightness(0.95)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isSubmitting) {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.filter = 'brightness(1)';
+            }
+          }}
         >
           {isSubmitting ? 'Creating Poll...' : 'Create Poll'}
         </button>

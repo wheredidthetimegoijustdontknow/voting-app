@@ -18,8 +18,16 @@ export default function PollingPollList({ initialPolls, userId }: PollingPollLis
 
   return (
     <div>
-      <div className="flex flex-wrap justify-between items-center mb-4 gap-3">
-        <h2 className="text-xl font-semibold text-gray-900">
+      <div className="flex flex-wrap justify-between items-center mb-6 gap-3">
+        <h2 
+          className="text-heading-lg"
+          style={{ 
+            color: 'var(--color-text-primary)',
+            margin: 0,
+            fontSize: 'var(--font-size-xl)',
+            fontWeight: '600'
+          }}
+        >
           All Polls ({polls.length})
         </h2>
         
@@ -33,15 +41,44 @@ export default function PollingPollList({ initialPolls, userId }: PollingPollLis
 
       {/* Connection Error Display */}
       {connectionError && (
-        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <div 
+          className="badge badge-warning"
+          style={{
+            backgroundColor: 'var(--color-warning-bg)',
+            borderColor: 'var(--color-warning-border)',
+            color: 'var(--color-warning)',
+            padding: 'var(--spacing-sm)',
+            borderRadius: 'var(--radius-sm)',
+            borderWidth: '1px',
+            borderStyle: 'solid',
+            fontSize: 'var(--font-size-sm)',
+            marginBottom: 'var(--spacing-md)',
+            display: 'block'
+          }}
+        >
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-            <span className="text-sm text-yellow-800">
+            <div 
+              style={{
+                width: '8px',
+                height: '8px',
+                backgroundColor: 'var(--color-warning)',
+                borderRadius: 'var(--radius-full)'
+              }}
+            />
+            <span>
               Real-time updates temporarily unavailable: {connectionError}
             </span>
             <button
               onClick={refresh}
-              className="text-xs text-yellow-600 underline hover:text-yellow-800"
+              style={{
+                backgroundColor: 'transparent',
+                border: 'none',
+                color: 'var(--color-warning)',
+                textDecoration: 'underline',
+                fontSize: 'var(--font-size-xs)',
+                cursor: 'pointer',
+                marginLeft: 'auto'
+              }}
             >
               Retry
             </button>
@@ -51,28 +88,82 @@ export default function PollingPollList({ initialPolls, userId }: PollingPollLis
 
       {/* Connection Status */}
       {isConnected ? (
-        <div className="mb-4 p-2 bg-green-50 border border-green-200 rounded-lg">
+        <div 
+          className="badge badge-success"
+          style={{
+            backgroundColor: 'var(--color-success-bg)',
+            borderColor: 'var(--color-success-border)',
+            color: 'var(--color-success)',
+            padding: 'var(--spacing-sm)',
+            borderRadius: 'var(--radius-sm)',
+            borderWidth: '1px',
+            borderStyle: 'solid',
+            fontSize: 'var(--font-size-sm)',
+            marginBottom: 'var(--spacing-md)',
+            display: 'block'
+          }}
+        >
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-sm text-green-800">
-              Live updates active
-            </span>
+            <div 
+              style={{
+                width: '8px',
+                height: '8px',
+                backgroundColor: 'var(--color-success)',
+                borderRadius: 'var(--radius-full)',
+                animation: 'pulse 2s infinite'
+              }}
+            />
+            <span>Live updates active</span>
           </div>
         </div>
       ) : !connectionError && (
-        <div className="mb-4 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+        <div 
+          className="badge badge-info"
+          style={{
+            backgroundColor: 'var(--color-info-bg)',
+            borderColor: 'var(--color-info-border)',
+            color: 'var(--color-info)',
+            padding: 'var(--spacing-sm)',
+            borderRadius: 'var(--radius-sm)',
+            borderWidth: '1px',
+            borderStyle: 'solid',
+            fontSize: 'var(--font-size-sm)',
+            marginBottom: 'var(--spacing-md)',
+            display: 'block'
+          }}
+        >
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-            <span className="text-sm text-blue-800">
-              Connecting to real-time updates...
-            </span>
+            <div 
+              style={{
+                width: '8px',
+                height: '8px',
+                backgroundColor: 'var(--color-info)',
+                borderRadius: 'var(--radius-full)'
+              }}
+            />
+            <span>Connecting to real-time updates...</span>
           </div>
         </div>
       )}
 
       {polls.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-          <p className="text-black">
+        <div 
+          className="text-center"
+          style={{
+            padding: '48px 24px',
+            backgroundColor: 'var(--color-surface)',
+            border: '1px solid var(--color-border-default)',
+            borderRadius: 'var(--radius-lg)',
+            boxShadow: 'var(--shadow-sm)'
+          }}
+        >
+          <p 
+            className="text-body"
+            style={{ 
+              color: 'var(--color-text-primary)',
+              margin: 0
+            }}
+          >
             No polls yet. Create the first one!
           </p>
         </div>
