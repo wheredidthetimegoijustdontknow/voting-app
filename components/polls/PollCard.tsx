@@ -5,11 +5,10 @@ import VoteButton from './VoteButton';
 import { EditPollButton } from './EditPollButton'; // Import the EditPollButton
 
 interface PollCardProps {
-  poll: PollWithResults;
-  isSignedIn: boolean;
-  onVoteSuccess?: () => void;
-  // --- NEW PROP ---
-  currentUserId: string | null; // The ID of the currently logged-in user
+  poll: PollWithResults;
+  isSignedIn: boolean;
+  onVoteSuccess?: () => void;
+  currentUserId: string | null; // The ID of the currently logged-in user
 }
 
 export default function PollCard({ poll, isSignedIn, onVoteSuccess, currentUserId }: PollCardProps) {
@@ -88,8 +87,6 @@ export default function PollCard({ poll, isSignedIn, onVoteSuccess, currentUserI
         })}
       </div>
       
-      
-
       {/* Sign in prompt for non-authenticated users */}
       {!isSignedIn && !poll.user_has_voted && (
         <div className="text-center py-3 bg-gray-50 rounded-lg border border-gray-200">

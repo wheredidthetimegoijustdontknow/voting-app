@@ -4,9 +4,10 @@ interface UpdateIndicatorProps {
   isUpdating: boolean;
   lastUpdate: Date;
   onRefresh: () => void;
+  error?: string | null;
 }
 
-export default function UpdateIndicator({ isUpdating, lastUpdate, onRefresh }: UpdateIndicatorProps) {
+export default function UpdateIndicator({ isUpdating, lastUpdate, onRefresh, error }: UpdateIndicatorProps) {
   const getTimeAgo = () => {
     const seconds = Math.floor((new Date().getTime() - lastUpdate.getTime()) / 1000);
     
@@ -24,7 +25,12 @@ export default function UpdateIndicator({ isUpdating, lastUpdate, onRefresh }: U
     <div className="flex flex-wrap items-center gap-3 text-sm">
       {/* Status Indicator */}
       <div className="flex items-center gap-2">
-        {isUpdating ? (
+        {error ? (
+          <>
+            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+            <span className="text-red-600 font-medium">Error</span>
+          </>
+        ) : isUpdating ? (
           <>
             <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
             <span className="text-blue-600 font-medium">Updating...</span>
@@ -36,6 +42,13 @@ export default function UpdateIndicator({ isUpdating, lastUpdate, onRefresh }: U
           </>
         )}
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <span className="text-red-500 text-xs">
+          {error}
+        </span>
+      )}
 
       {/* Last Update Time */}
       <span className="text-gray-500">

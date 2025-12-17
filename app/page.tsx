@@ -1,8 +1,7 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { fetchPollsWithResults } from '@/lib/polls/queries';
-import AuthButton from '@/components/auth/AuthButton';
-import CreatePollForm from '@/components/polls/CreatePollForm';
-import PollingPollList from '@/components/polls/PollsContainer';  
+import { getCurrentProfile } from '@/app/actions/profile';
+import PageClient from '@/components/PageClient';
 
 export default async function Home() {
   const supabase = await createServerSupabaseClient();
@@ -10,28 +9,25 @@ export default async function Home() {
   const polls = await fetchPollsWithResults();
   const currentUserId = user?.id;
   
+  // Fetch current user's profile to get their username
+  let currentUsername: string | undefined;
+  if (user?.id) {
+    try {
+      const profileResult = await getCurrentProfile();
+      if (profileResult.success && profileResult.data) {
+        currentUsername = profileResult.data.username;
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      // Continue without username if profile fetch fails
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">
-            Real-time Voting App
-          </h1>
-          <AuthButton />
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 py-8">
-        {/* Create Poll Form */}
-        <div className="mb-8">
-          <CreatePollForm />
-        </div>
-
-        {/* Polls List with Polling */}
-        <PollingPollList initialPolls={polls} userId={user?.id || null} />
-      </main>
-    </div>
+    <PageClient 
+      polls={polls}
+      userId={currentUserId || null}
+      initialUsername={currentUsername}
+    />
   );
 }
