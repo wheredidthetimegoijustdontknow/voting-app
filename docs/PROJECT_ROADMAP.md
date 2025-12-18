@@ -76,7 +76,7 @@
 - [x] **Admin Features**: Ability to flag polls for review and remove polls.
 
 ## Phase 8: User Improvements & Refinement
-- [ ] **Stability**: Fix Emoji Icon persistence and re-render optimizations.
+- [x] **Stability**: Fix Emoji Icon persistence and re-render optimizations.
 - [ ] **User Management**: Add user roles and permissions for different levels of access.
 - [ ] **User Analytics**: Real-time engagement metrics and user behavior.
 - [ ] **Admin Features**:     

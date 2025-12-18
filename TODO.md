@@ -31,10 +31,10 @@
 - [x] **Admin Features**: Ability to flag polls for review and remove polls.
 
 ## Phase 8: User Improvements & Refinement
-- [ ] **Bug Fix: Emoji Icon Persistence & Re-rendering**:
-    - [ ] Fix `useRealtimeVotes` missing icon field.
-    - [ ] Update `updatePoll` to allow admin overrides.
-    - [ ] Optimize `PollCard` with `React.memo` to prevent global refreshes.
+- [x] **Bug Fix: Emoji Icon Persistence & Re-rendering**:
+    - [x] Fix `useRealtimeVotes` missing icon field.
+    - [x] Update `updatePoll` to allow admin overrides.
+    - [x] Optimize `PollCard` with `React.memo` to prevent global refreshes.
 - [ ] **User Management**: Roles and permissions structure.
 - [ ] **User Analytics**: Engagement metrics and behavior tracking.
 - [ ] **Admin Features**:

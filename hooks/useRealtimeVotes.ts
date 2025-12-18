@@ -38,6 +38,7 @@ interface PollData {
   last_vote_at: string;
   is_premium_timer: boolean;
   deleted_at: string | null;
+  icon?: string;
 }
 
 export function useRealtimeVotes({ initialPolls, userId }: UseRealtimeVotesOptions) {
@@ -113,6 +114,7 @@ export function useRealtimeVotes({ initialPolls, userId }: UseRealtimeVotesOptio
           results: aggregated,
           user_has_voted: !!userVote,
           user_vote_choice: userVote?.choice,
+          icon: pollData.icon,
         };
 
         // Update the specific poll in state
@@ -207,6 +209,7 @@ export function useRealtimeVotes({ initialPolls, userId }: UseRealtimeVotesOptio
             results: aggregated,
             user_has_voted: !!userVote,
             user_vote_choice: userVote?.choice,
+            icon: poll.icon,
           };
         });
 

@@ -1,4 +1,6 @@
-'use client';
+﻿'use client';
+
+import { memo } from 'react';
 
 import type { PollWithResults } from '@/lib/polls/types';
 import VoteButton from './VoteButton';
@@ -25,7 +27,7 @@ interface PollCardProps {
   userRole?: string;
 }
 
-export default function PollCard({ poll, isSignedIn, onVoteSuccess, currentUserId, userRole }: PollCardProps) {
+function PollCard({ poll, isSignedIn, onVoteSuccess, currentUserId, userRole }: PollCardProps) {
   const isCreator = currentUserId === poll.user_id;
   const isAdmin = userRole === 'admin';
   const canEditIcon = isCreator || isAdmin;
@@ -69,7 +71,6 @@ export default function PollCard({ poll, isSignedIn, onVoteSuccess, currentUserI
       const res = await updatePoll(poll.id, { icon: emoji });
       if (res.success) {
         toast('Poll icon updated!', { type: 'success' });
-        router.refresh();
         if (onVoteSuccess) onVoteSuccess();
       } else {
         toast(res.error || 'Failed to update icon', { type: 'error' });
@@ -143,7 +144,7 @@ export default function PollCard({ poll, isSignedIn, onVoteSuccess, currentUserI
               {isUpdatingIcon ? (
                 <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
               ) : (
-                <span className="drop-shadow-sm">{poll.icon || '📊'}</span>
+                <span className="drop-shadow-sm">{poll.icon || 'ðŸ“Š'}</span>
               )}
             </button>
 
@@ -265,7 +266,7 @@ export default function PollCard({ poll, isSignedIn, onVoteSuccess, currentUserI
                       color: 'var(--color-success)',
                     }}
                   >
-                    <span className="flex items-center justify-center w-4 h-4 rounded-full bg-success text-white text-[10px]">✓</span>
+                    <span className="flex items-center justify-center w-4 h-4 rounded-full bg-success text-white text-[10px]">âœ“</span>
                     <span>You voted: <span className="font-bold">"{poll.user_vote_choice}"</span></span>
                   </div>
 
@@ -389,3 +390,5 @@ export default function PollCard({ poll, isSignedIn, onVoteSuccess, currentUserI
     </>
   );
 }
+
+export default memo(PollCard);

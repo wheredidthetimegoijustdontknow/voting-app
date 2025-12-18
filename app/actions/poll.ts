@@ -311,7 +311,16 @@ export async function updatePoll(pollId: string, updates: { question_text?: stri
       return { success: false, error: 'Poll not found.' };
     }
 
-    if (poll.user_id !== user.id) {
+    // Check ownership or admin status
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    const isAdmin = profile?.role === 'admin';
+
+    if (poll.user_id !== user.id && !isAdmin) {
       return { success: false, error: 'You do not have permission to edit this poll.' };
     }
 
