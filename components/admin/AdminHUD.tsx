@@ -121,12 +121,14 @@ export default function AdminHUD() {
 
     return (
         <div
-            className={`fixed top-6 right-6 z-50 transition-all duration-300 ${isMinimized ? 'w-48' : 'w-72'}`}
+            className={`fixed bottom-10 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 ${isMinimized ? 'w-48' : 'w-80'}`}
             style={{
                 backgroundColor: 'var(--color-surface)',
+                backdropFilter: 'blur(8px)',
                 border: '1px solid var(--color-border-default)',
-                borderRadius: 'var(--radius-lg)',
-                boxShadow: 'var(--shadow-lg)'
+                borderRadius: 'var(--radius-xl)',
+                boxShadow: '0 10px 40px -10px rgba(0,0,0,0.3)',
+                padding: '2px'
             }}
         >
             {/* Header */}

@@ -1,6 +1,6 @@
 # Project Overview: Real-time Voting Application
 
-This document provides a high-level overview of the application's architecture, data flow, and specialized systems as of the completion of Phase 4.
+This document provides a high-level overview of the application's architecture, data flow, and specialized systems as of the commencement of **Phase 6**.
 
 ## 🏛️ High-Level Architecture
 
@@ -69,6 +69,20 @@ Managed via `useEnhancedRealtimePresence.ts`.
 ## 🛠️ Global UI Layout
 - **AppLayout**: Persistent wrapper containing the `Header`, `ActivityFeed` (sidebar), and `OnlineUsersBanner`.
 - **PageClient**: State-aware container for home/dashboard views, managing real-time statistics and diagnostic tools.
+
+## 🔮 Phase 6: Advanced Analytics & Management (Active)
+
+Building upon the robust real-time foundation, Phase 6 focuses on deepening user insights and administrative control.
+
+### 1. Data Visualization
+- **Recharts Integration**: Implementation of responsive charts for poll results.
+- **Collapsible Analytics**: Compact "at-a-glance" summary bars on the main poll cards.
+- **Engagement Metrics**: Visualizing voting patterns and peak activity times.
+
+### 2. Advanced Management
+- **User Roles**: Implementing Admin, Moderator, and User tiers for granular permission control.
+- **Poll Constraints**: Adding temporal logic (start/end dates) and visibility toggles.
+- **Social Integration**: Real-time comment threads and sharing capabilities.
 
 ---
 

@@ -3,6 +3,7 @@
 import type { PollWithResults } from '@/lib/polls/types';
 import VoteButton from './VoteButton';
 import { EditPollButton } from './EditPollButton';
+import { DeletePollButton } from './DeletePollButton';
 import { BarChart3 } from 'lucide-react';
 import PollResultsChart from '../analytics/PollResultsChart';
 import { useState, useEffect, useRef } from 'react';
@@ -36,155 +37,148 @@ export default function PollCard({ poll, isSignedIn, onVoteSuccess, currentUserI
 
   return (
     <div
-      className={`card group transition-all duration-100 hover:ring-1 ${isGlowing ? 'animate-vote-glow' : ''}`}
+      className={`card card-poll group p-0 flex items-stretch overflow-hidden transition-all duration-300 ${isGlowing ? 'animate-vote-glow' : ''}`}
       style={{
-        backgroundColor: 'var(--color-surface)',
-        borderColor: 'var(--color-border-default)',
-        borderWidth: '1px',
-        borderStyle: 'solid',
-        borderRadius: 'var(--radius-lg)',
-        padding: 'var(--spacing-lg)',
-        boxShadow: 'var(--shadow-sm)',
-        '--tw-ring-color': 'var(--color-primary)'
+        '--poll-color': `var(--color-poll-${poll.color_theme_id || 1})`,
+        '--poll-soft': `var(--color-poll-${poll.color_theme_id || 1}-soft)`,
+        '--poll-glow': `var(--color-poll-${poll.color_theme_id || 1}-glow)`,
+        borderColor: isGlowing ? 'var(--poll-color)' : undefined,
       } as React.CSSProperties}
     >
-      <div className="flex items-start gap-4">
-        {/* Icon */}
+      {/* Accent Column */}
+      <div
+        className="w-16 shrink-0 flex flex-col items-center justify-between py-6 border-r transition-colors duration-300"
+        style={{
+          backgroundColor: 'var(--poll-soft)',
+          borderColor: 'var(--poll-soft)'
+        }}
+      >
+        {/* Poll Icon at Top */}
         <div
-          className="w-10 h-10 rounded-full flex items-center justify-center border shrink-0"
+          className="w-10 h-10 rounded-xl flex items-center justify-center border shadow-sm transition-all duration-300 group-hover:scale-110"
           style={{
-            backgroundColor: 'var(--color-info-bg)',
-            color: 'var(--color-info)',
-            borderColor: 'var(--color-info-border)'
+            backgroundColor: 'var(--color-surface)',
+            color: 'var(--poll-color)',
+            borderColor: 'var(--poll-color)'
           }}
         >
           <BarChart3 size={20} />
         </div>
 
-        <div className="flex-1 space-y-2">
-          {/* Header Row */}
-          <div className="flex justify-between items-start">
-            <div>
-              <h3
-                className="text-heading-lg group-hover:text-primary transition-colors"
-                style={{
-                  color: 'var(--color-text-primary)',
-                  margin: 0,
-                  fontSize: 'var(--font-size-lg)',
-                  fontWeight: '600',
-                  lineHeight: '1.5'
-                }}
-              >
-                {poll.question_text}
-              </h3>
-              <p
-                className="text-body-sm"
-                style={{
-                  color: 'var(--color-text-secondary)',
-                  margin: 0
-                }}
-              >
-                By {poll.creator_email} • {poll.total_votes} {poll.total_votes === 1 ? 'vote' : 'votes'}
-              </p>
-            </div>
+        {/* Edit/Delete Buttons at Bottom (only for creators) */}
+        {isCreator && (
+          <div className="flex flex-col gap-2">
+            <EditPollButton
+              pollId={poll.id}
+              isCreator={isCreator}
+              questionText={poll.question_text}
+              onEditSuccess={onVoteSuccess}
+            />
+            <DeletePollButton
+              pollId={poll.id}
+              isCreator={isCreator}
+              onDeleteSuccess={onVoteSuccess}
+            />
+          </div>
+        )}
+      </div>
 
-            {/* Badges/Actions */}
-            <div className="flex items-center gap-2">
-              <span
-                className="badge badge-success"
-                style={{
-                  backgroundColor: 'var(--color-success-bg)',
-                  color: 'var(--color-success)',
-                  borderColor: 'var(--color-success-border)',
-                  borderWidth: '1px',
-                  borderStyle: 'solid',
-                  padding: '2px 8px',
-                  borderRadius: '999px',
-                  fontSize: 'var(--font-size-xs)',
-                  fontWeight: '500'
-                }}
-              >
-                Active
-              </span>
-              {isCreator && (
-                <EditPollButton
-                  pollId={poll.id}
-                  isCreator={isCreator}
-                  questionText={poll.question_text}
-                  onDeleteSuccess={onVoteSuccess}
-                />
-              )}
+      {/* Main Content Area */}
+      <div className="flex-1 p-6 space-y-4">
+        {/* Header Row */}
+        <div className="flex justify-between items-start">
+          <div className="space-y-1">
+            <h3
+              className="text-heading-lg transition-colors duration-300"
+              style={{
+                color: 'var(--color-text-primary)',
+                margin: 0,
+                fontSize: 'var(--font-size-lg)',
+                fontWeight: '700',
+                lineHeight: '1.4'
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--poll-color)')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-text-primary)')}
+            >
+              {poll.question_text}
+            </h3>
+            <div className="flex items-center gap-2 text-xs font-medium" style={{ color: 'var(--color-text-muted)' }}>
+              <span>Created by {poll.creator_email}</span>
+              <span className="w-1 h-1 rounded-full bg-border-strong"></span>
+              <span style={{ color: 'var(--poll-color)' }}>{poll.total_votes} {poll.total_votes === 1 ? 'vote' : 'votes'}</span>
             </div>
           </div>
 
-          {/* User Voted Badge */}
-          {poll.user_has_voted && (
-            <div
-              className="badge badge-info inline-flex items-center gap-1"
+          {/* Badges/Actions */}
+          <div className="flex items-center gap-2">
+            <span
+              className="badge"
               style={{
-                backgroundColor: 'var(--color-info-bg)',
-                borderColor: 'var(--color-info-border)',
-                color: 'var(--color-info)',
-                padding: 'var(--spacing-xs) var(--spacing-sm)',
-                borderRadius: 'var(--radius-sm)',
+                backgroundColor: 'var(--poll-soft)',
+                color: 'var(--poll-color)',
+                borderColor: 'var(--poll-color)',
                 borderWidth: '1px',
                 borderStyle: 'solid',
-                fontSize: 'var(--font-size-sm)',
+                padding: '2px 10px',
+                borderRadius: '8px',
+                fontSize: '10px',
+                fontWeight: '700',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
               }}
             >
-              ✓ You voted: {poll.user_vote_choice}
-            </div>
-          )}
-
-          {/* Visualization Toggle */}
-          <div className="flex justify-end pt-2">
-            <button
-              onClick={() => setShowChart(!showChart)}
-              className="button button-ghost text-sm font-medium hover:text-primary transition-colors flex items-center gap-1"
-              style={{ color: 'var(--color-text-muted)' }}
-            >
-              <BarChart3 size={16} />
-              {showChart ? 'Show List' : 'Visualize Results'}
-            </button>
+              Active
+            </span>
           </div>
+        </div>
 
-          {/* Content Area (Chart or List) */}
-          <div className="mt-4">
-            {showChart ? (
-              <PollResultsChart results={poll.results} />
-            ) : (
-              poll.results.map((result) => {
-                const isUserChoice = poll.user_vote_choice === result.choice;
+        {/* User Voted Badge */}
+        {poll.user_has_voted && (
+          <div
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium"
+            style={{
+              backgroundColor: 'var(--color-success-bg)',
+              borderColor: 'var(--color-success-border)',
+              color: 'var(--color-success)',
+            }}
+          >
+            <span className="flex items-center justify-center w-4 h-4 rounded-full bg-success text-white text-[10px]">✓</span>
+            <span>You voted: <span className="font-bold">"{poll.user_vote_choice}"</span></span>
+          </div>
+        )}
 
-                return (
-                  <div key={result.choice} className="space-y-2 mb-3 last:mb-0">
-                    {/* Choice Header */}
-                    <div className="flex justify-between items-center text-sm">
-                      <span
-                        className="font-medium"
-                        style={{
-                          color: isUserChoice ? 'var(--color-success)' : 'var(--color-text-primary)'
-                        }}
-                      >
-                        {result.choice} {isUserChoice && '(You)'}
-                      </span>
-                      <span style={{ color: 'var(--color-text-secondary)' }}>
-                        {result.count} ({result.percentage.toFixed(1)}%)
-                      </span>
-                    </div>
+        {/* Content Area (Chart or List) */}
+        <div className="mt-4 space-y-4">
+          {showChart ? (
+            <PollResultsChart results={poll.results} color="var(--poll-color)" />
+          ) : (
+            poll.results.map((result) => {
+              const isUserChoice = poll.user_vote_choice === result.choice;
 
-                    {/* Progress Bar */}
-                    <div
-                      className="progress-bar relative h-2 bg-border-light rounded-full overflow-hidden"
+              return (
+                <div key={result.choice} className="group/item relative">
+                  <div className="flex justify-between items-center text-sm mb-1.5 font-medium">
+                    <span
                       style={{
-                        backgroundColor: 'var(--color-border-light)',
-                        height: '8px'
+                        color: isUserChoice ? 'var(--color-success)' : 'var(--color-text-primary)'
                       }}
                     >
+                      {result.choice} {isUserChoice && <span className="text-[10px] ml-1 opacity-70">(Your Pick)</span>}
+                    </span>
+                    <span style={{ color: 'var(--color-text-secondary)' }}>
+                      {result.percentage.toFixed(0)}%
+                    </span>
+                  </div>
+
+                  {/* Progress Bar Container */}
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="flex-1 h-2 bg-zinc-100 dark:bg-zinc-800/50 rounded-full overflow-hidden"
+                    >
                       <div
-                        className="absolute top-0 left-0 h-full rounded-full transition-all duration-500"
+                        className="h-full rounded-full transition-all duration-700 ease-out"
                         style={{
-                          backgroundColor: isUserChoice ? 'var(--color-success)' : 'var(--color-primary)',
+                          backgroundColor: isUserChoice ? 'var(--color-success)' : 'var(--poll-color)',
                           width: `${result.percentage}%`
                         }}
                       />
@@ -192,35 +186,44 @@ export default function PollCard({ poll, isSignedIn, onVoteSuccess, currentUserI
 
                     {/* Vote Button */}
                     {isSignedIn && !poll.user_has_voted && (
-                      <div className="pt-1">
-                        <VoteButton
-                          pollId={poll.id}
-                          choice={result.choice}
-                          isSelected={false}
-                          onVoteSuccess={onVoteSuccess}
-                        />
-                      </div>
+                      <VoteButton
+                        pollId={poll.id}
+                        choice={result.choice}
+                        isSelected={false}
+                        onVoteSuccess={onVoteSuccess}
+                      />
                     )}
                   </div>
-                );
-              })
-            )}
-          </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Visualization Toggle */}
+        <div className="flex justify-end pt-2">
+          <button
+            onClick={() => setShowChart(!showChart)}
+            className="text-[11px] font-bold uppercase tracking-wider transition-colors flex items-center gap-1.5 py-1 px-2 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            style={{
+              color: 'var(--color-text-muted)',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--poll-color)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-text-muted)')}
+          >
+            <BarChart3 size={14} />
+            {showChart ? 'View List' : 'Visual Analytics'}
+          </button>
         </div>
       </div>
 
       {/* Sign in prompt for non-authenticated users */}
       {!isSignedIn && !poll.user_has_voted && (
         <div
-          className="text-center mt-4 p-4 rounded-lg border border-dashed"
-          style={{
-            borderColor: 'var(--color-border-default)',
-            backgroundColor: 'var(--color-background)'
-          }}
+          className="absolute bottom-0 left-16 right-0 p-2 bg-zinc-50/80 dark:bg-zinc-900/80 backdrop-blur-sm border-t text-center text-[10px] font-bold uppercase tracking-widest"
+          style={{ borderColor: 'var(--color-border-light)', color: 'var(--color-text-muted)' }}
         >
-          <p className="text-sm text-muted">
-            Sign in to vote on this poll
-          </p>
+          Sign in to participate
         </div>
       )}
     </div>

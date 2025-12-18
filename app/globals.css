@@ -19,6 +19,8 @@
   /* Background Colors - Zinc */
   --color-background: #F4F4F5;
   /* Zinc 100 */
+  --color-content-bg: #ffffffef;
+  /* Zinc 200 - Darker container for content */
   --color-surface: #FFFFFF;
   /* White */
   --color-elevated: #FFFFFF;
@@ -104,6 +106,27 @@
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+  /* Poll Identity Colors - Light Mode (Professional) */
+  --color-poll-1: #0077B6;
+  /* Ocean Blue */
+  --color-poll-1-soft: rgb(0, 118, 182);
+
+  --color-poll-2: #9333EA;
+  /* Vibrant Purple */
+  --color-poll-2-soft: rgb(146, 51, 234);
+
+  --color-poll-3: #DC2626;
+  /* Bold Red */
+  --color-poll-3-soft: rgb(220, 38, 38);
+
+  --color-poll-4: #059669;
+  /* Emerald Green */
+  --color-poll-4-soft: rgb(5, 150, 104);
+
+  --color-poll-5: #EA580C;
+  /* Vivid Orange */
+  --color-poll-5-soft: rgb(234, 90, 12);
 }
 
 /* Dark Theme */
@@ -121,6 +144,8 @@
   /* Background Colors */
   --color-background: #000000;
   /* Pure Black */
+  --color-content-bg: #18181B;
+  /* Zinc 900 - Lighter container for content */
   --color-surface: #121212;
   /* Dark Grey */
   --color-elevated: #18181B;
@@ -182,6 +207,32 @@
   /* Indigo 500 */
   --color-interactive-disabled: #18181B;
   /* Zinc 900 */
+
+  /* Poll Identity Colors - Dark Mode (Neon) */
+  --color-poll-1: #06B6D4;
+  /* Cyan */
+  --color-poll-1-soft: rgba(6, 182, 212, 0.15);
+  --color-poll-1-glow: rgba(6, 182, 212, 0.4);
+
+  --color-poll-2: #A855F7;
+  /* Purple */
+  --color-poll-2-soft: rgba(168, 85, 247, 0.15);
+  --color-poll-2-glow: rgba(168, 85, 247, 0.4);
+
+  --color-poll-3: #EF4444;
+  /* Red */
+  --color-poll-3-soft: rgba(239, 68, 68, 0.15);
+  --color-poll-3-glow: rgba(239, 68, 68, 0.4);
+
+  --color-poll-4: #10B981;
+  /* Emerald */
+  --color-poll-4-soft: rgba(16, 185, 129, 0.15);
+  --color-poll-4-glow: rgba(16, 185, 129, 0.4);
+
+  --color-poll-5: #F97316;
+  /* Orange */
+  --color-poll-5-soft: rgba(249, 115, 22, 0.15);
+  --color-poll-5-glow: rgba(249, 115, 22, 0.4);
 }
 
 /* Tailwind Theme Configuration */
@@ -273,7 +324,24 @@ body {
   border-radius: var(--radius-lg);
   padding: var(--spacing-lg);
   box-shadow: none;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-poll {
+  --poll-color: var(--color-poll-1);
+  --poll-soft: var(--color-poll-1-soft);
+  --poll-glow: transparent;
+  padding: 0;
+}
+
+[data-theme="dark"] .card-poll {
+  --poll-glow: var(--color-poll-1-glow);
+}
+
+.card-poll:hover {
+  border-color: var(--poll-color);
+  box-shadow: 0 0 20px -5px var(--poll-glow);
+  transform: translateY(-2px);
 }
 
 .card:hover {
@@ -543,6 +611,29 @@ body {
 *:focus-visible {
   outline: 2px solid var(--color-interactive-focus);
   outline-offset: 2px;
+}
+
+/* Modal Animations and Glassmorphism */
+/* Modal Animations and Glassmorphism */
+.modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.3);
+  transition: opacity 0.3s ease;
+}
+
+.modal-content-popup {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+}
+
+.glassmorphism {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border-default);
+  box-shadow: var(--shadow-xl);
+}
+
+[data-theme="dark"] .glassmorphism {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border-default);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 8px 32px 0 rgba(0, 0, 0, 0.5);
 }
 
 /* Print Styles */

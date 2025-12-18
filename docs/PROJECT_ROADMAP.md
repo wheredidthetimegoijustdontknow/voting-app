@@ -57,13 +57,41 @@
 - [x] **Update PROJECT_ROADMAP.md**: Add new features to the roadmap.
 - [x] **Commit & Push**: Commit and push changes to the repository.
 
-## Phase 6: Advanced Analytics & Management (Active)
+## Phase 6: App Facelift & Layout Overhaul [COMPLETED]
+- [x] **Poll Colorization**: Identity-Based color system implemented (1-5 theme families).
+- [x] **Sidebar Navigation**: Relocated top menu to a persistent left-side sidebar.
+- [x] **Collapsible Activity Feed**: Transformed activity log into a collapsible right pane.
+- [x] **Floating Admin HUD**: Relocated Admin controls to a floating center-bottom position.
+- [ ] **Update PROJECT_ROADMAP.md**: Track progress on these UI changes.
 
-- [ ] **Results Visualization**: Integrate Recharts/Chart.js for deep-dive analytics.
-- [ ] **Analytics Dashboard**: Real-time engagement metrics and user behavior.
-- [ ] **User Management**: Add user roles and permissions for different levels of access.
+## Phase 7: Poll Improvements
+- [ ] **Collapsible Polls**: Compact summary bars for poll cards.
 - [ ] **Poll Constraints**: End dates/Time limits for polls.
-- [ ] **Social Features**: Comments and social sharing links.
+- [ ] **Inactive Polls**: Polls that have not been active for a certain amount of time will be deleted.
+- [ ] **Expired Polls**: Polls that have passed their end date will be deleted.
+
+## Phase 8: User Improvements
+- [ ] **User Management**: Add user roles and permissions for different levels of access.
+- [ ] **User Analytics**: Real-time engagement metrics and user behavior.
+- [ ] **User Management**: Add user roles and permissions for different levels of access.
+- [ ] **Admin Features**:     
+    - [ ] **User Management**: Add user roles and permissions for different levels of access.
+    - [ ] **Poll Constraints**: Change dates/Time limits for polls.
+    - [ ] **Poll Management**: Edit, delete, and manage polls.
+    - [ ] **Change Poll color**: Allow users to change the color of their polls.
+    - [ ] **Change Poll emoji**: Allow users to change the emoji of their polls.
+    - [ ] **Change Poll avatar**: Allow users to change the avatar of their polls.
+
+## Phase 9: User Analytics and Poll Analytics
+- [ ] **User Analytics**: Real-time engagement metrics and user behavior.
+- [ ] **Poll Analytics**: Real-time engagement metrics and poll behavior.
+- [ ] **Results Visualization**: Integrate Recharts/Chart.js for deep-dive analytics.
+
+## Future: ???
 - [ ] **Collapsible Analytics**: Compact summary bars for poll cards.
-- [ ] **Update PROJECT_ROADMAP.md**: Add new features to the roadmap.
-- [ ] **Commit & Push**: Commit and push changes to the repository.
+- [ ] **Notifications**: Real-time notifications for new polls, votes, and activity. Users will receive youtube-like notifications for new polls, votes, and activity. They can subscribe to specific polls to receive notifications for new votes and activity, or receive notifications for all polls, including when new ones are posted and activity on the posts that they created.
+- [ ] **Replay Feature**: Users can replay polls to see how people voted over time.
+- [ ] **Premium feature**: Users can set their own color scheme for polls they create. (Can be a premium feature in the future)
+- [ ] **Premium feature**: Users can set their own avatar/emoji for polls they create. (Can be a premium feature in the future)
+- [ ] **Social Features**: Comments and social sharing links.
+- [ ] **Glassmorphism Redux**: Revisit premium frosted-glass UI for modals once advanced CSS/stacking fixes are planned.

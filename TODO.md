@@ -11,12 +11,35 @@
 - [x] **Glow Effects**: Visual feedback for real-time vote updates in the UI.
 - [x] **Data Documentation**: Finalize the Architecture and Schema documentation.
 
-## Phase 6: Advanced Analytics & Management (ACTIVE)
-- [ ] **UI Improvements**: Vibrant randomized colors for PollCards (`cardstyleguide.md`).
-- [ ] **Results Visualization**: Integrate Recharts/Chart.js for deep-dive analytics.
-- [ ] **Analytics Dashboard**: Real-time engagement metrics and user behavior.
-- [ ] **User Management**: Add user roles and permissions for different levels of access.
+## Phase 6: App Facelift & Layout Overhaul (✅ COMPLETED)
+- [x] **Poll Colorization**: Identity-Based color system implemented.
+- [x] **Sidebar Navigation**: Relocated top menu to side.
+- [x] **Modal Refactor**: Converted Create/Delete flows to premium modals.
+- [x] **Admin HUD**: Floating admin controls.
+- [x] **Real-time Deletion**: Instant UI updates on poll removal.
+
+## Phase 7: Poll Improvements (ACTIVE)
+- [ ] **Collapsible Polls**: Compact summary bars for poll cards.
 - [ ] **Poll Constraints**: End dates/Time limits for polls.
-- [ ] **Social Features**: Comments and social sharing links.
-- [ ] **Collapsible Analytics**: Compact summary bars for poll cards.
-- [ ] **Update Documentation**: Keep roadmap and overviews in sync.
+- [ ] **Inactive Polls**: Auto-delete polls inactive for X time.
+- [ ] **Expired Polls**: Auto-delete polls past end date.
+
+## Phase 8: User Improvements
+- [ ] **User Management**: Roles and permissions structure.
+- [ ] **User Analytics**: Engagement metrics and behavior tracking.
+- [ ] **Admin Features**:
+    - [ ] Manage users (ban/promote).
+    - [ ] Edit/Delete any poll.
+    - [ ] Custom Poll colors/emojis/avatars.
+
+## Phase 9: Analytics & Visualization
+- [ ] **Poll Analytics**: Deep dive metrics per poll.
+- [ ] **Results Visualization**: Recharts/Chart.js integration.
+- [ ] **Collapsible Analytics**: Summary views.
+
+## Future
+- [ ] **Notifications**: Real-time alerts for votes/polls.
+- [ ] **Replay Feature**: Time-travel view of voting trends.
+- [ ] **Premium Features**: Custom branding for pro users.
+- [ ] **Glassmorphism Redux**: Revisit premium frosted-glass UI for modals once advanced CSS/stacking fixes are planned.
+- [ ] **Social Features**: Comments and sharing.

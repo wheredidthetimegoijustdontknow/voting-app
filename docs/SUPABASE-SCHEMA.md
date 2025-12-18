@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS polls (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
     question_text TEXT NOT NULL,
+    color_theme_id INTEGER DEFAULT 1 NOT NULL, -- Added for Phase 6 Facelift
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -141,5 +142,17 @@ CREATE TRIGGER on_auth_user_created
 3. **Real-time Enabled**: All tables added to supabase_realtime publication
 4. **Performance Optimized**: Indexes on key foreign key columns
 5. **Auto User Creation**: Trigger creates profiles for new auth users
+
+## Migrations
+
+### Phase 6: Poll Colorization
+Run this to update your existing polls table:
+```sql
+ALTER TABLE polls ADD COLUMN IF NOT EXISTS color_theme_id INTEGER DEFAULT 1 NOT NULL;
+```
+
+---
+
+*Last Updated: December 17, 2025*
 
 This schema will resolve the database constraint conflicts in your simulations and enable proper real-time functionality.

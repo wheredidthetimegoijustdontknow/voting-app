@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import CreatePollForm from './polls/CreatePollForm';
+import CreatePollButton from './polls/CreatePollButton';
 import PollingPollList from './polls/PollsContainer';
 import AdminHUD from './admin/AdminHUD';
 import type { PollWithResults } from '@/lib/polls/types';
@@ -49,31 +49,29 @@ export default function PageClient({ polls, userId }: PageClientProps) {
 
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-8">
-      <main
-        className="rounded-2xl shadow-sm border p-8 min-h-[80vh] transition-colors duration-300"
-        style={{
-          backgroundColor: 'var(--color-surface)',
-          borderColor: 'var(--color-border-default)'
-        }}
-      >
+    <div
+      className="rounded-2x3 p-8 md:p-10"
+      style={{ backgroundColor: 'var(--color-content-bg)' }}
+    >
+      <div className="space-y-10">
         {/* Dashboard Header */}
-        <div className="flex items-end justify-between mb-10">
+        <div className="flex items-end justify-between">
           <div>
             <h1
-              className="text-3xl font-bold tracking-tight mb-2"
+              className="text-4xl font-bold tracking-tight mb-2"
               style={{ color: 'var(--color-text-primary)' }}
             >
               Dashboard
             </h1>
-            <p style={{ color: 'var(--color-text-muted)' }}>
-              Manage your polls and view results.
+            <p style={{ color: 'var(--color-text-muted)' }} className="text-lg">
+              Manage your polls and view results in real-time.
             </p>
           </div>
+          <CreatePollButton />
         </div>
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
             { label: 'Total Active Polls', value: totalActivePolls, color: 'text-primary' },
             { label: 'Total Votes', value: totalVotes.toLocaleString(), color: 'text-primary' },
@@ -81,18 +79,17 @@ export default function PageClient({ polls, userId }: PageClientProps) {
           ].map((stat, i) => (
             <div
               key={i}
-              className="p-6 rounded-xl border transition-all duration-100 hover:ring-1"
+              className="p-6 rounded-2xl border transition-all duration-300 hover:border-primary hover:shadow-lg dark:hover:shadow-indigo-500/10"
               style={{
                 backgroundColor: 'var(--color-surface)',
                 borderColor: 'var(--color-border-default)',
-                '--tw-ring-color': 'var(--color-primary)'
               } as React.CSSProperties}
             >
-              <div className="text-sm font-medium mb-1" style={{ color: 'var(--color-text-muted)' }}>
+              <div className="text-sm font-semibold mb-1 uppercase tracking-wider opacity-60" style={{ color: 'var(--color-text-muted)' }}>
                 {stat.label}
               </div>
               <div
-                className="text-3xl font-bold"
+                className="text-4xl font-bold"
                 style={{ color: stat.color === 'primary' ? 'var(--color-primary)' : 'var(--color-text-primary)' }}
               >
                 {stat.value}
@@ -101,21 +98,16 @@ export default function PageClient({ polls, userId }: PageClientProps) {
           ))}
         </div>
 
-        {/* Create Poll Form Section */}
-        <div className="mb-8">
-          <CreatePollForm />
-        </div>
-
         {/* Polls List Section */}
         <div>
           <div
-            className="flex items-center justify-between text-sm pb-2 border-b mb-4"
+            className="flex items-center justify-between text-sm pb-4 border-b mb-6"
             style={{
               color: 'var(--color-text-muted)',
               borderColor: 'var(--color-border-default)'
             }}
           >
-            <span className="font-medium">All Polls</span>
+            <span className="font-bold uppercase tracking-widest text-xs">Active Polls</span>
           </div>
 
           <PollingPollList
@@ -123,11 +115,10 @@ export default function PageClient({ polls, userId }: PageClientProps) {
             userId={userId}
           />
         </div>
-      </main>
 
-
-      {/* Admin Simulation HUD - Only for authenticated users in this demo */}
-      {userId && <AdminHUD />}
+        {/* Admin Simulation HUD - Only for authenticated users in this demo */}
+        {userId && <AdminHUD />}
+      </div>
     </div>
   );
 }

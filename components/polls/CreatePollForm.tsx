@@ -5,7 +5,11 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createPoll } from '@/app/actions/poll';
 
-export default function CreatePollForm() {
+interface CreatePollFormProps {
+  onSuccess?: () => void;
+}
+
+export default function CreatePollForm({ onSuccess }: CreatePollFormProps) {
   const [questionText, setQuestionText] = useState('');
   const [choices, setChoices] = useState<string[]>(['', '']);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,6 +63,7 @@ export default function CreatePollForm() {
         setChoices(['', '']);
         // Refresh the page data
         router.refresh();
+        if (onSuccess) onSuccess();
       } else {
         setError(result.error || 'Failed to create poll');
       }
@@ -71,225 +76,85 @@ export default function CreatePollForm() {
   };
 
   return (
-    <div
-      className="card"
-      style={{
-        backgroundColor: 'var(--color-surface)',
-        borderColor: 'var(--color-border-default)',
-        borderWidth: '1px',
-        borderStyle: 'solid',
-        borderRadius: 'var(--radius-lg)',
-        padding: 'var(--spacing-lg)',
-        boxShadow: 'none',
-        marginBottom: 'var(--spacing-xl)'
-      }}
-    >
-      <h2
-        className="text-heading-lg"
-        style={{
-          color: 'var(--color-text-primary)',
-          marginBottom: 'var(--spacing-lg)',
-          marginTop: 0
-        }}
-      >
-        Create New Poll
-      </h2>
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Question Input */}
-        <div>
-          <label
-            htmlFor="question"
-            className="text-body"
-            style={{
-              display: 'block',
-              fontWeight: '500',
-              marginBottom: 'var(--spacing-sm)',
-              color: 'var(--color-text-primary)'
-            }}
-          >
-            Question
-          </label>
-          <input
-            type="text"
-            id="question"
-            value={questionText}
-            onChange={(e) => setQuestionText(e.target.value)}
-            placeholder="What would you like to ask?"
-            className="input"
-            style={{
-              width: '100%',
-              padding: '10px 12px',
-              border: '1px solid var(--color-border-default)',
-              borderRadius: '6px',
-              backgroundColor: 'var(--color-surface)',
-              color: 'var(--color-text-primary)',
-              fontSize: 'var(--font-size-base)',
-              fontFamily: 'var(--font-family-sans)',
-              lineHeight: '1.5',
-              transition: 'all 0.2s ease'
-            }}
-            disabled={isSubmitting}
-          />
-        </div>
-
-        {/* Choices */}
-        <div>
-          <label
-            className="text-body"
-            style={{
-              display: 'block',
-              fontWeight: '500',
-              marginBottom: 'var(--spacing-sm)',
-              color: 'var(--color-text-primary)'
-            }}
-          >
-            Choices
-          </label>
-          <div className="space-y-3">
-            {choices.map((choice, index) => (
-              <div key={index} className="flex gap-3">
-                <input
-                  type="text"
-                  value={choice}
-                  onChange={(e) => updateChoice(index, e.target.value)}
-                  placeholder={`Choice ${index + 1}`}
-                  className="input"
-                  style={{
-                    flex: 1,
-                    padding: '10px 12px',
-                    border: '1px solid var(--color-border-default)',
-                    borderRadius: '6px',
-                    backgroundColor: 'var(--color-surface)',
-                    color: 'var(--color-text-primary)',
-                    fontSize: 'var(--font-size-base)',
-                    fontFamily: 'var(--font-family-sans)',
-                    lineHeight: '1.5',
-                    transition: 'all 0.2s ease'
-                  }}
-                  disabled={isSubmitting}
-                />
-                {choices.length > 2 && (
-                  <button
-                    type="button"
-                    onClick={() => removeChoice(index)}
-                    style={{
-                      padding: '10px 12px',
-                      backgroundColor: 'transparent',
-                      color: 'var(--color-error)',
-                      border: '1px solid var(--color-error)',
-                      borderRadius: '6px',
-                      fontSize: 'var(--font-size-sm)',
-                      fontWeight: '500',
-                      fontFamily: 'var(--font-family-sans)',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                      boxShadow: 'none',
-                      transform: 'translateY(0)',
-                    }}
-                    disabled={isSubmitting}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-1px)';
-                      e.currentTarget.style.filter = 'brightness(0.95)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.filter = 'brightness(1)';
-                    }}
-                  >
-                    Remove
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-
-          <button
-            type="button"
-            onClick={addChoice}
-            style={{
-              marginTop: 'var(--spacing-sm)',
-              padding: '6px 12px',
-              backgroundColor: 'transparent',
-              color: 'var(--color-primary)',
-              border: '1px solid var(--color-primary)',
-              borderRadius: '6px',
-              fontSize: 'var(--font-size-sm)',
-              fontWeight: '500',
-              fontFamily: 'var(--font-family-sans)',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-              boxShadow: 'none',
-              transform: 'translateY(0)',
-            }}
-            disabled={isSubmitting}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-1px)';
-              e.currentTarget.style.filter = 'brightness(0.95)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.filter = 'brightness(1)';
-            }}
-          >
-            + Add Choice
-          </button>
-        </div>
-
-        {/* Error Message */}
-        {error && (
-          <div
-            className="badge badge-error"
-            style={{
-              backgroundColor: 'var(--color-error-bg)',
-              borderColor: 'var(--color-error-border)',
-              color: 'var(--color-error)',
-              padding: 'var(--spacing-sm)',
-              borderRadius: 'var(--radius-sm)',
-              borderWidth: '1px',
-              borderStyle: 'solid',
-              fontSize: 'var(--font-size-sm)'
-            }}
-          >
-            {error}
-          </div>
-        )}
-
-        {/* Submit Button */}
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          style={{
-            width: '100%',
-            padding: '10px 16px',
-            backgroundColor: isSubmitting ? 'var(--color-primary-hover)' : 'var(--color-primary)',
-            color: 'var(--color-text-inverse)',
-            border: '1px solid var(--color-primary)',
-            borderRadius: '6px',
-            fontSize: 'var(--font-size-base)',
-            fontWeight: '500',
-            fontFamily: 'var(--font-family-sans)',
-            cursor: isSubmitting ? 'not-allowed' : 'pointer',
-            transition: 'all 0.15s ease',
-            boxShadow: 'none',
-            transform: 'translateY(0)',
-          }}
-          onMouseEnter={(e) => {
-            if (!isSubmitting) {
-              e.currentTarget.style.transform = 'translateY(-1px)';
-              e.currentTarget.style.filter = 'brightness(0.95)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!isSubmitting) {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.filter = 'brightness(1)';
-            }
-          }}
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Question Input */}
+      <div>
+        <label
+          htmlFor="question"
+          className="text-body font-medium mb-2 block"
+          style={{ color: 'var(--color-text-primary)' }}
         >
-          {isSubmitting ? 'Creating Poll...' : 'Create Poll'}
+          Question
+        </label>
+        <input
+          type="text"
+          id="question"
+          value={questionText}
+          onChange={(e) => setQuestionText(e.target.value)}
+          placeholder="What would you like to ask?"
+          className="input w-full"
+          disabled={isSubmitting}
+        />
+      </div>
+
+      {/* Choices */}
+      <div>
+        <label
+          className="text-body font-medium mb-2 block"
+          style={{ color: 'var(--color-text-primary)' }}
+        >
+          Choices
+        </label>
+        <div className="space-y-3">
+          {choices.map((choice, index) => (
+            <div key={index} className="flex gap-2">
+              <input
+                type="text"
+                value={choice}
+                onChange={(e) => updateChoice(index, e.target.value)}
+                placeholder={`Choice ${index + 1}`}
+                className="input flex-1"
+                disabled={isSubmitting}
+              />
+              {choices.length > 2 && (
+                <button
+                  type="button"
+                  onClick={() => removeChoice(index)}
+                  className="px-3 py-2 text-sm font-medium rounded-lg border border-error text-error hover:bg-error/10 transition-colors"
+                  disabled={isSubmitting}
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          onClick={addChoice}
+          className="mt-3 px-3 py-1.5 text-sm font-medium rounded-lg border border-primary text-primary hover:bg-primary/5 transition-colors"
+          disabled={isSubmitting}
+        >
+          + Add Choice
         </button>
-      </form>
-    </div>
+      </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="badge badge-error w-full py-3 px-4 rounded-lg">
+          {error}
+        </div>
+      )}
+
+      {/* Submit Button */}
+      <button
+        type="submit"
+        disabled={isSubmitting}
+        className="button button-primary w-full h-12 text-base shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
+      >
+        {isSubmitting ? 'Creating Poll...' : 'Create Poll'}
+      </button>
+    </form>
   );
 }

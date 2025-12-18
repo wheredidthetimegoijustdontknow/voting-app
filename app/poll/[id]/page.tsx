@@ -2,7 +2,8 @@
 
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
-import { EditPollButton } from '../../../components/polls/EditPollButton'; // Import the client component
+import { EditPollButton } from '../../../components/polls/EditPollButton';
+import { DeletePollButton } from '../../../components/polls/DeletePollButton';
 
 interface PollPageProps {
   params: { id: string };
@@ -42,12 +43,17 @@ export default async function PollPage({ params }: PollPageProps) {
       {/* RENDER THE BUTTON HERE! */}
       {isCreator && (
         <div className="mt-6 border-t pt-4">
-          {/* The client component handles the delete/edit actions */}
-          <EditPollButton
-            pollId={poll.id}
-            isCreator={isCreator}
-            questionText={poll.question_text}
-          />
+          <div className="flex items-center gap-3">
+            <EditPollButton
+              pollId={poll.id}
+              isCreator={isCreator}
+              questionText={poll.question_text}
+            />
+            <DeletePollButton
+              pollId={poll.id}
+              isCreator={isCreator}
+            />
+          </div>
         </div>
       )}
 

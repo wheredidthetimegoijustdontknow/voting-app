@@ -20,9 +20,10 @@ interface Result {
 
 interface PollResultsChartProps {
     results: Result[];
+    color?: string;
 }
 
-export default function PollResultsChart({ results }: PollResultsChartProps) {
+export default function PollResultsChart({ results, color = 'var(--color-primary)' }: PollResultsChartProps) {
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
@@ -60,7 +61,7 @@ export default function PollResultsChart({ results }: PollResultsChartProps) {
                     }}
                 >
                     <p style={{ margin: 0, fontWeight: 600, color: 'var(--color-text-primary)' }}>{label}</p>
-                    <p style={{ margin: 0, color: 'var(--color-primary)' }}>
+                    <p style={{ margin: 0, color: color }}>
                         Votes: {payload[0].value}
                     </p>
                 </div>
@@ -99,7 +100,7 @@ export default function PollResultsChart({ results }: PollResultsChartProps) {
                     <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--color-bg-subtle)' }} />
                     <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                         {results.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill="var(--color-primary)" />
+                            <Cell key={`cell-${index}`} fill={color} />
                         ))}
                     </Bar>
                 </BarChart>

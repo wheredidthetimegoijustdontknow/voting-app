@@ -19,7 +19,7 @@ export async function fetchPollsWithResults(filterCreatorId?: string): Promise<P
   // Fetch polls
   let query = supabase
     .from('polls')
-    .select('id, created_at, user_id, question_text')
+    .select('id, created_at, user_id, question_text, color_theme_id')
     .order('created_at', { ascending: false });
 
   if (filterCreatorId) {
@@ -69,6 +69,7 @@ export async function fetchPollsWithResults(filterCreatorId?: string): Promise<P
       created_at: poll.created_at,
       user_id: poll.user_id,
       question_text: poll.question_text,
+      color_theme_id: poll.color_theme_id,
       creator_email: 'Anonymous',
       total_votes: pollVotes.length,
       results: aggregateVotes(pollVotes, pollChoices.map((c: any) => c.choice)),
@@ -91,7 +92,7 @@ export async function fetchPollById(pollId: string): Promise<PollWithResults | n
   // Fetch single poll
   const { data: poll, error: pollError } = await supabase
     .from('polls')
-    .select('id, created_at, user_id, question_text')
+    .select('id, created_at, user_id, question_text, color_theme_id')
     .eq('id', pollId)
     .single();
 
@@ -132,6 +133,7 @@ export async function fetchPollById(pollId: string): Promise<PollWithResults | n
     created_at: poll.created_at,
     user_id: poll.user_id,
     question_text: poll.question_text,
+    color_theme_id: poll.color_theme_id,
     creator_email: 'Anonymous',
     total_votes: pollVotes?.length || 0,
     results: aggregateVotes(pollVotes || [], pollChoicesData?.map((c: any) => c.choice) || []),

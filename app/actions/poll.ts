@@ -2,6 +2,7 @@
 'use server';
 
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
@@ -40,6 +41,7 @@ export async function deletePoll(pollId: string): Promise<ActionResponse> {
 
   try {
     const supabase = await createServerSupabaseClient();
+    const adminSupabase = createAdminSupabaseClient();
 
     // Check if the user is authenticated
     const { data: { user } } = await supabase.auth.getUser();
@@ -54,48 +56,46 @@ export async function deletePoll(pollId: string): Promise<ActionResponse> {
       .eq('id', validatedData.pollId)
       .single();
 
+    console.log('[deletePoll] Ownership check:', {
+      pollId: validatedData.pollId,
+      found: !!poll,
+      pollCreator: poll?.user_id,
+      currentUser: user.id
+    });
+
     if (pollError || !poll) {
-      console.error('Error fetching poll:', pollError);
+      console.error('[deletePoll] Error fetching poll or not found:', pollError);
       return { success: false, error: 'Poll not found or access denied.' };
     }
 
     // Check if the current user is the creator of the poll
     if (poll.user_id !== user.id) {
+      console.warn('[deletePoll] Unauthorized attempt by user:', user.id);
       return { success: false, error: 'You can only delete your own polls.' };
     }
 
-    // Delete related votes first (foreign key constraint)
-    const { error: votesError } = await supabase
-      .from('votes')
-      .delete()
-      .eq('poll_id', validatedData.pollId);
+    // Use ADMIN client to perform the deletion
+    console.log('[deletePoll] Proceeding with Admin deletion...');
 
-    if (votesError) {
-      console.error('Error deleting votes:', votesError);
-      return { success: false, error: `Failed to delete poll votes: ${votesError.message}` };
-    }
+    // 1. Delete associated choices and votes via admin client
+    const { error: votesError } = await adminSupabase.from('votes').delete().eq('poll_id', validatedData.pollId);
+    if (votesError) console.error('[deletePoll] Admin votes delete error:', votesError);
 
-    // Delete poll choices
-    const { error: choicesError } = await supabase
-      .from('polls_choices')
-      .delete()
-      .eq('poll_id', validatedData.pollId);
+    const { error: choicesError } = await adminSupabase.from('polls_choices').delete().eq('poll_id', validatedData.pollId);
+    if (choicesError) console.error('[deletePoll] Admin choices delete error:', choicesError);
 
-    if (choicesError) {
-      console.error('Error deleting poll choices:', choicesError);
-      return { success: false, error: `Failed to delete poll choices: ${choicesError.message}` };
-    }
-
-    // Finally, delete the poll itself
-    const { error: deleteError } = await supabase
+    // 2. Finally, delete the poll itself
+    const { error: deleteError } = await adminSupabase
       .from('polls')
       .delete()
       .eq('id', validatedData.pollId);
 
     if (deleteError) {
-      console.error('Error deleting poll:', deleteError);
+      console.error('[deletePoll] Admin poll delete error:', deleteError);
       return { success: false, error: `Failed to delete poll: ${deleteError.message}` };
     }
+
+    console.log('[deletePoll] Successfully deleted poll:', validatedData.pollId);
 
     // Revalidate relevant paths
     revalidatePath('/'); // Home page with poll list
@@ -214,6 +214,7 @@ export async function createPoll(formData: { question_text: string; choices: str
       .insert({
         question_text,
         user_id: user.id,
+        color_theme_id: Math.floor(Math.random() * 5) + 1, // Random theme 1-5
       })
       .select('id')
       .single();

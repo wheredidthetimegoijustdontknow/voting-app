@@ -31,6 +31,7 @@ interface PollData {
   created_at: string;
   user_id: string;
   question_text: string;
+  color_theme_id: number;
 }
 
 export function useRealtimeVotes({ initialPolls, userId }: UseRealtimeVotesOptions) {
@@ -93,6 +94,7 @@ export function useRealtimeVotes({ initialPolls, userId }: UseRealtimeVotesOptio
           created_at: pollData.created_at,
           user_id: pollData.user_id,
           question_text: pollData.question_text,
+          color_theme_id: pollData.color_theme_id,
           creator_email: 'Anonymous',
           total_votes: (pollVotes || []).length,
           results: aggregated,
@@ -180,6 +182,7 @@ export function useRealtimeVotes({ initialPolls, userId }: UseRealtimeVotesOptio
             created_at: poll.created_at,
             user_id: poll.user_id,
             question_text: poll.question_text,
+            color_theme_id: poll.color_theme_id,
             creator_email: 'Anonymous',
             total_votes: votes.length,
             results: aggregated,
@@ -201,9 +204,8 @@ export function useRealtimeVotes({ initialPolls, userId }: UseRealtimeVotesOptio
 
   // Sync local state with initialPolls when they change (e.g. via router.refresh())
   useEffect(() => {
-    // Only update if we have new data and it's different (basic length check or deep compare if needed)
-    // For now, trust that router.refresh() passes fresh data.
-    if (initialPolls && initialPolls.length > 0) {
+    // Sync with fresh data from props
+    if (initialPolls) {
       setPolls(initialPolls);
     }
   }, [initialPolls]);
@@ -257,9 +259,18 @@ export function useRealtimeVotes({ initialPolls, userId }: UseRealtimeVotesOptio
           console.log('📝 Poll updated:', payload.new);
           const pollId = payload.new?.id;
           if (pollId) {
-            // Determine if we need to full refresh or just update locally.
-            // updatePollWithVotes fetches the poll details again, so it will catch the new question.
             updatePollWithVotes(pollId);
+          }
+        }
+      )
+      // Listen for Poll Deletions
+      .on('postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'polls' },
+        (payload) => {
+          console.log('🗑️ Poll deleted in real-time:', payload.old);
+          const pollId = payload.old?.id;
+          if (pollId) {
+            setPolls(currentPolls => currentPolls.filter(p => p.id !== pollId));
           }
         }
       )

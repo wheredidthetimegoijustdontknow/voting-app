@@ -4,6 +4,7 @@ export type Poll = {
   created_at: string;
   user_id: string;
   question_text: string;
+  color_theme_id: number;
 };
 
 export type Vote = {

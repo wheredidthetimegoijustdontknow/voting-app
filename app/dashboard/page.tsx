@@ -25,67 +25,44 @@ export default async function DashboardPage() {
     const avgVotesPerPoll = totalPolls > 0 ? totalVotes / totalPolls : 0;
 
     return (
-        <div className="container mx-auto px-4 py-8" style={{ maxWidth: '1200px' }}>
-            <header style={{ marginBottom: 'var(--spacing-xl)' }}>
-                <h1
-                    style={{
-                        fontSize: 'var(--font-size-4xl)',
-                        fontWeight: '700',
-                        marginBottom: 'var(--spacing-xs)',
-                        color: 'var(--color-text-primary)'
-                    }}
-                >
-                    Dashboard
-                </h1>
-                <p style={{ color: 'var(--color-text-secondary)' }}>
-                    Manage your polls and view performance insights.
-                </p>
-            </header>
-
-            <section style={{ marginBottom: 'var(--spacing-xxl)' }}>
-                <h2
-                    style={{
-                        fontSize: 'var(--font-size-xl)',
-                        fontWeight: '600',
-                        marginBottom: 'var(--spacing-lg)',
-                        color: 'var(--color-text-primary)'
-                    }}
-                >
-                    Overview
-                </h2>
-                <DashboardStats
-                    totalPolls={totalPolls}
-                    totalVotes={totalVotes}
-                    avgVotesPerPoll={avgVotesPerPoll}
-                />
-            </section>
-
-            <section>
-                <div
-                    style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: 'var(--spacing-lg)'
-                    }}
-                >
-                    <h2
-                        style={{
-                            fontSize: 'var(--font-size-xl)',
-                            fontWeight: '600',
-                            color: 'var(--color-text-primary)'
-                        }}
+        <div
+            className="rounded-2xl p-8 md:p-10"
+            style={{ backgroundColor: 'var(--color-content-bg)' }}
+        >
+            <div className="space-y-12">
+                <header>
+                    <h1
+                        className="text-4xl font-bold tracking-tight mb-2"
+                        style={{ color: 'var(--color-text-primary)' }}
                     >
-                        My Polls
-                    </h2>
-                </div>
-                <MyPollsList polls={polls} currentUserId={user.id} />
-            </section>
+                        Dashboard
+                    </h1>
+                    <p style={{ color: 'var(--color-text-secondary)' }} className="text-lg">
+                        Manage your polls and view performance insights.
+                    </p>
+                </header>
 
-            <DevTools />
+                <section>
+                    <h2 className="text-xl font-bold mb-6" style={{ color: 'var(--color-text-primary)' }}>Overview</h2>
+                    <DashboardStats
+                        totalPolls={totalPolls}
+                        totalVotes={totalVotes}
+                        avgVotesPerPoll={avgVotesPerPoll}
+                    />
+                </section>
 
-            {/* Real-time Data Diagnostic Panel */}
-            <DataDiagnostic polls={polls} currentUserId={user.id} />
+                <section>
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>My Polls</h2>
+                    </div>
+                    <MyPollsList polls={polls} currentUserId={user!.id} />
+                </section>
+
+                <DevTools />
+
+                {/* Real-time Data Diagnostic Panel */}
+                <DataDiagnostic polls={polls} currentUserId={user!.id} />
+            </div>
         </div>
     );
 }

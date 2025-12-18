@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
-export default function AuthButton() {
+export default function AuthButton({ collapsed = false }: { collapsed?: boolean }) {
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [clientReady, setClientReady] = useState(false);
@@ -70,29 +70,24 @@ export default function AuthButton() {
       console.error('Sign out error:', error);
     } else {
       setUser(null);
-      // Refresh to update server-side session state (PageClient's userId prop)
       router.refresh();
     }
     setLoading(false);
   };
 
   if (loading) {
+    if (collapsed) {
+      return (
+        <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
+      );
+    }
     return (
       <button
         disabled
+        className="w-full px-3 py-2 rounded-lg text-sm font-medium opacity-50 cursor-not-allowed"
         style={{
-          padding: '8px 16px',
           backgroundColor: 'var(--color-text-muted)',
-          color: 'var(--color-text-inverse)',
-          border: '1px solid var(--color-text-muted)',
-          borderRadius: '6px',
-          fontSize: 'var(--font-size-sm)',
-          fontWeight: '500',
-          fontFamily: 'var(--font-family-sans)',
-          cursor: 'not-allowed',
-          opacity: 0.5,
-          boxShadow: 'none',
-          transition: 'all 0.15s ease',
+          color: '#FFFFFF',
         }}
       >
         Loading...
@@ -101,40 +96,41 @@ export default function AuthButton() {
   }
 
   if (user) {
-    return (
-      <div className="flex items-center gap-3">
-        <span
-          className="text-body-sm"
-          style={{
-            color: 'var(--color-text-secondary)',
-            fontSize: 'var(--font-size-sm)'
-          }}
-        >
-          Signed in as: <strong>{user.email || user.id}</strong>
-        </span>
+    if (collapsed) {
+      return (
         <button
           onClick={handleSignOut}
+          className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm transition-all hover:bg-red-500/10"
           style={{
-            padding: '8px 16px',
+            backgroundColor: 'var(--color-primary)',
+            color: '#FFFFFF',
+          }}
+          title={`Sign out (${user.email || user.id})`}
+          aria-label="Sign out"
+        >
+          {(user.email?.[0] || 'U').toUpperCase()}
+        </button>
+      );
+    }
+
+    return (
+      <div className="flex flex-col gap-2">
+        <div
+          className="text-xs truncate px-2 py-1 rounded-md"
+          style={{
+            color: 'var(--color-text-secondary)',
+            backgroundColor: 'var(--color-background)',
+          }}
+          title={user.email || user.id}
+        >
+          <div className="font-semibold truncate">{user.email || user.id}</div>
+        </div>
+        <button
+          onClick={handleSignOut}
+          className="w-full px-3 py-2 rounded-lg text-sm font-medium transition-all hover:brightness-95"
+          style={{
             backgroundColor: 'var(--color-error)',
-            color: 'var(--color-text-inverse)',
-            border: '1px solid var(--color-error)',
-            borderRadius: '6px',
-            fontSize: 'var(--font-size-sm)',
-            fontWeight: '500',
-            fontFamily: 'var(--font-family-sans)',
-            cursor: 'pointer',
-            transition: 'all 0.15s ease',
-            boxShadow: 'none',
-            transform: 'translateY(0)',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-1px)';
-            e.currentTarget.style.filter = 'brightness(0.95)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.filter = 'brightness(1)';
+            color: '#FFFFFF',
           }}
         >
           Sign Out
@@ -143,37 +139,30 @@ export default function AuthButton() {
     );
   }
 
+  if (collapsed) {
+    return (
+      <button
+        onClick={handleSignInWithGoogle}
+        className="w-10 h-10 rounded-lg flex items-center justify-center transition-all hover:brightness-95"
+        style={{
+          backgroundColor: 'var(--color-primary)',
+          color: '#FFFFFF',
+        }}
+        title="Sign in with Google"
+        aria-label="Sign in"
+      >
+        G
+      </button>
+    );
+  }
+
   return (
     <button
       onClick={handleSignInWithGoogle}
+      className="w-full px-3 py-2 rounded-lg text-sm font-medium transition-all hover:brightness-95"
       style={{
-        padding: '8px 16px',
         backgroundColor: 'var(--color-primary)',
-        color: 'var(--color-text-inverse)',
-        border: '1px solid var(--color-primary)',
-        borderRadius: '6px',
-        fontSize: 'var(--font-size-sm)',
-        fontWeight: '500',
-        fontFamily: 'var(--font-family-sans)',
-        cursor: 'pointer',
-        transition: 'all 0.15s ease',
-        boxShadow: 'none',
-        transform: 'translateY(0)',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'translateY(-1px)';
-        e.currentTarget.style.filter = 'brightness(0.95)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.filter = 'brightness(1)';
-      }}
-      onFocus={(e) => {
-        e.currentTarget.style.outline = 'none';
-        e.currentTarget.style.boxShadow = '0 0 0 2px var(--color-background), 0 0 0 4px var(--color-primary)';
-      }}
-      onBlur={(e) => {
-        e.currentTarget.style.boxShadow = 'none';
+        color: '#FFFFFF',
       }}
     >
       Sign in with Google
