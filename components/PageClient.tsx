@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import CreatePollButton from './polls/CreatePollButton';
@@ -11,11 +11,13 @@ import type { PollWithResults } from '@/lib/polls/types';
 interface PageClientProps {
   polls: PollWithResults[];
   userId: string | null;
+  userRole?: string;
 }
 
-export default function PageClient({ polls, userId }: PageClientProps) {
+export default function PageClient({ polls, userId, userRole }: PageClientProps) {
   const router = useRouter();
-  const supabase = createClient();
+  // Fix: Ensure supabase client is stable across renders
+  const [supabase] = useState(() => createClient());
 
   const totalActivePolls = polls.length;
   const totalVotes = polls.reduce((acc: number, poll) => acc + (poll.total_votes || 0), 0);
@@ -113,6 +115,7 @@ export default function PageClient({ polls, userId }: PageClientProps) {
           <PollingPollList
             initialPolls={polls}
             userId={userId}
+            userRole={userRole}
           />
         </div>
 

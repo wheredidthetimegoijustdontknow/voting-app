@@ -33,9 +33,11 @@ export default async function RootLayout({
   const { data: { user } } = await supabase.auth.getUser();
 
   let initialUsername: string | undefined;
+  let initialRole: string | undefined;
   if (user) {
     const profileRes = await getCurrentProfile();
     initialUsername = profileRes.data?.username;
+    initialRole = profileRes.data?.role;
   }
 
   return (
@@ -46,7 +48,11 @@ export default async function RootLayout({
         <ThemeProvider>
           <ToastProvider>
             <VoteToastListener />
-            <AppLayout userId={user?.id || null} initialUsername={initialUsername}>
+            <AppLayout
+              userId={user?.id || null}
+              initialUsername={initialUsername}
+              initialRole={initialRole}
+            >
               {children}
             </AppLayout>
           </ToastProvider>

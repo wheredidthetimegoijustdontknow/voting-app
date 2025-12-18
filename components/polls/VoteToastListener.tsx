@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/ToastContext';
 
 export function VoteToastListener() {
     const { toast } = useToast();
-    const supabase = createClient();
+    // Fix: Ensure supabase client is stable across renders
+    const [supabase] = useState(() => createClient());
 
     useEffect(() => {
         // Subscribe to INSERT events on the 'votes' table

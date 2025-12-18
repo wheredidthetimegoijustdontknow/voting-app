@@ -62,25 +62,27 @@
 - [x] **Sidebar Navigation**: Relocated top menu to a persistent left-side sidebar.
 - [x] **Collapsible Activity Feed**: Transformed activity log into a collapsible right pane.
 - [x] **Floating Admin HUD**: Relocated Admin controls to a floating center-bottom position.
-- [ ] **Update PROJECT_ROADMAP.md**: Track progress on these UI changes.
+- [x] **Update PROJECT_ROADMAP.md**: Track progress on these UI changes.
 
-## Phase 7: Poll Improvements
-- [ ] **Collapsible Polls**: Compact summary bars for poll cards.
-- [ ] **Poll Constraints**: End dates/Time limits for polls.
-- [ ] **Inactive Polls**: Polls that have not been active for a certain amount of time will be deleted.
-- [ ] **Expired Polls**: Polls that have passed their end date will be deleted.
+## Phase 7: Advanced Poll System (✅ Completed)
+- [x] **Poll Colors**: Allow users to change the color of their polls.
+- [x] **Collapsible Polls**: Compact summary bars for poll cards.
+- [x] **Advanced Status Logic**: Implement `DRAFT`, `SCHEDULED`, `ACTIVE`, `ENDED`, `REVIEW`, and `REMOVED` states.
+- [x] **Dynamic UI Badges**: `[New!]`, `[Dormant]`, `[Ending Soon]`, and `[Verified]` indicators.
+- [x] **Tiered Timers**: Support for Free (presets) and Premium (custom datetime) timers.
+- [x] **Soft Delete & Recovery**: Move polls to `REMOVED` state with a 7-day auto-delete grace period.
+- [x] **Automated Transitions**: Cron/Edge functions for status updates (e.g., Scheduled -> Active).
+- [x] **Inactivity Tracking**: `last_vote_at` tracking for `[Dormant]` badge logic.
+- [x] **Admin Features**: Ability to flag polls for review and remove polls.
 
-## Phase 8: User Improvements
+## Phase 8: User Improvements & Refinement
+- [ ] **Stability**: Fix Emoji Icon persistence and re-render optimizations.
 - [ ] **User Management**: Add user roles and permissions for different levels of access.
 - [ ] **User Analytics**: Real-time engagement metrics and user behavior.
-- [ ] **User Management**: Add user roles and permissions for different levels of access.
 - [ ] **Admin Features**:     
-    - [ ] **User Management**: Add user roles and permissions for different levels of access.
     - [ ] **Poll Constraints**: Change dates/Time limits for polls.
     - [ ] **Poll Management**: Edit, delete, and manage polls.
-    - [ ] **Change Poll color**: Allow users to change the color of their polls.
-    - [ ] **Change Poll emoji**: Allow users to change the emoji of their polls.
-    - [ ] **Change Poll avatar**: Allow users to change the avatar of their polls.
+    - [ ] **Customization**: Allow admins to change poll colors/emojis/avatars for any poll.
 
 ## Phase 9: User Analytics and Poll Analytics
 - [ ] **User Analytics**: Real-time engagement metrics and user behavior.

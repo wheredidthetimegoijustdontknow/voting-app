@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { BarChart3, Users, Layout, TrendingUp } from 'lucide-react';
@@ -69,7 +69,8 @@ interface DashboardStatsProps {
 
 export default function DashboardStats({ totalPolls, totalVotes, avgVotesPerPoll }: DashboardStatsProps) {
     const router = useRouter();
-    const supabase = createClient();
+    // Fix: Ensure supabase client is stable across renders
+    const [supabase] = useState(() => createClient());
 
     useEffect(() => {
         let timeout: NodeJS.Timeout;

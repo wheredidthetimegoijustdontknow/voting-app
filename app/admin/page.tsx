@@ -1,10 +1,38 @@
-import { fetchBots, fetchBotStats } from '@/lib/actions/admin';
-import { Bot, AlertTriangle } from 'lucide-react';
+import { LayoutDashboard, ShieldAlert, Bot, Users, ArrowRight } from 'lucide-react';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import SimulationControls from '@/components/admin/SimulationControls';
+import Link from 'next/link';
+import AdminNav from '@/components/admin/AdminNav';
 
-export default async function AdminPage() {
+const adminSections = [
+    {
+        title: 'Moderation Queue',
+        description: 'Review flagged polls, manage reports, and enforce community guidelines.',
+        href: '/admin/moderation',
+        icon: ShieldAlert,
+        color: 'text-amber-500',
+        bgColor: 'bg-amber-50',
+    },
+    {
+        title: 'Bot Simulation',
+        description: 'Configure and run persistent bot users to simulate organic poll activity.',
+        href: '/admin/botsim',
+        icon: Bot,
+        color: 'text-indigo-600',
+        bgColor: 'bg-indigo-50',
+    },
+    {
+        title: 'User Management',
+        description: 'Manage user accounts, roles, permissions and view user activity stats.',
+        href: '/admin/usermanagement',
+        icon: Users,
+        color: 'text-emerald-600',
+        bgColor: 'bg-emerald-50',
+        isPlaceholder: true
+    }
+];
+
+export default async function AdminHomePage() {
     // Basic auth check
     const supabase = await createServerSupabaseClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -12,111 +40,78 @@ export default async function AdminPage() {
     if (!user) {
         redirect('/');
     }
-    // In a real app, check for admin role here. 
-    // const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    // if (profile?.role !== 'admin') redirect('/');
-
-    const bots = await fetchBots();
-    const stats = await fetchBotStats();
 
     return (
         <div
-            className="rounded-2xl p-8 md:p-10"
-            style={{ backgroundColor: 'var(--color-content-bg)' }}
+            className="min-h-screen p-4 md:p-8"
+            style={{ backgroundColor: 'var(--color-background)' }}
         >
-            <div className="container mx-auto" style={{ maxWidth: '1000px' }}>
-                <header className="mb-8 flex justify-between items-center">
-                    <div>
-                        <h1 className="text-heading-xl mb-2 flex items-center gap-2">
-                            <Bot className="text-primary" />
-                            Bot Simulation Admin
-                        </h1>
-                        <p className="text-body text-secondary">
-                            Manage persistent bots and simulate voting behavior.
-                        </p>
-                    </div>
+            <div className="max-w-6xl mx-auto">
+                <AdminNav />
+
+                <header className="mb-12">
+                    <h1 className="text-3xl font-bold text-zinc-900 mb-2">Admin Dashboard</h1>
+                    <p className="text-zinc-600 max-w-2xl">
+                        Welcome to the command center. From here you can manage all aspects of the voting platform,
+                        from content moderation to automated simulation.
+                    </p>
                 </header>
 
-                {!process.env.SUPABASE_SERVICE_ROLE_KEY && (
-                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6 flex items-center gap-2">
-                        <AlertTriangle size={20} />
-                        <span>
-                            <strong>Warning:</strong> SUPABASE_SERVICE_ROLE_KEY is missing. Bot management features will not work.
-                        </span>
-                    </div>
-                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {adminSections.map((section) => (
+                        <Link
+                            key={section.href}
+                            href={section.href}
+                            className="group block p-6 bg-white border border-zinc-200 rounded-2xl shadow-sm hover:border-indigo-300 hover:shadow-md transition-all duration-300 relative overflow-hidden"
+                        >
+                            {/* Accent line */}
+                            <div className={`absolute top-0 left-0 w-full h-1 ${section.bgColor.replace('50', '500')}`} />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                    {/* Control Panel */}
-                    <div className="card">
-                        <h2 className="text-heading-md mb-4 flex items-center gap-2">
-                            <Bot size={20} />
-                            Simulation Controls
-                        </h2>
-
-                        <SimulationControls />
-                    </div>
-
-                    {/* Stats */}
-                    <div className="card">
-                        <h2 className="text-heading-md mb-4">Simulation Stats</h2>
-                        <div className="space-y-4">
-                            <div className="flex justify-between items-center p-3 bg-surface border border-light rounded">
-                                <span className="text-secondary">Total Persistent Bots</span>
-                                <span className="text-xl font-bold">{stats.totalBots}</span>
+                            <div className="flex items-start justify-between mb-4">
+                                <div className={`p-3 rounded-xl ${section.bgColor} ${section.color}`}>
+                                    <section.icon size={24} />
+                                </div>
+                                <ArrowRight size={20} className="text-zinc-300 group-hover:text-indigo-500 group-hover:translate-x-1 transition-all" />
                             </div>
-                            <div className="flex justify-between items-center p-3 bg-surface border border-light rounded">
-                                <span className="text-secondary">Total Bot Votes</span>
-                                <span className="text-xl font-bold text-primary">{stats.totalBotVotes}</span>
-                            </div>
-                            <div className="flex justify-between items-center p-3 bg-surface border border-light rounded">
-                                <span className="text-secondary">Environment</span>
-                                <span className="badge badge-info">{process.env.NODE_ENV}</span>
+
+                            <h2 className="text-xl font-bold text-zinc-900 mb-2">{section.title}</h2>
+                            <p className="text-zinc-500 text-sm leading-relaxed mb-4">
+                                {section.description}
+                            </p>
+
+                            {section.isPlaceholder && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-zinc-100 text-zinc-500">
+                                    Coming Soon
+                                </span>
+                            )}
+                        </Link>
+                    ))}
+                </div>
+
+                <div className="mt-16 bg-indigo-900 rounded-2xl p-8 text-white relative overflow-hidden shadow-xl">
+                    {/* Decorative elements */}
+                    <div className="absolute top-0 right-0 -mt-8 -mr-8 w-64 h-64 bg-indigo-800 rounded-full opacity-50 blur-3xl" />
+                    <div className="absolute bottom-0 left-0 -mb-8 -ml-8 w-48 h-48 bg-indigo-500 rounded-full opacity-20 blur-2xl" />
+
+                    <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                        <div className="max-w-xl">
+                            <h3 className="text-2xl font-bold mb-2">System Overview</h3>
+                            <p className="text-indigo-100 opacity-80 text-sm">
+                                All administration tools are currently in internal beta. Report any issues to the development team.
+                                Security policies are strictly enforced for all administrative actions.
+                            </p>
+                        </div>
+                        <div className="flex gap-4">
+                            <div className="px-6 py-4 bg-indigo-800/50 backdrop-blur-sm border border-indigo-700/50 rounded-xl">
+                                <span className="block text-indigo-300 text-[10px] font-bold uppercase tracking-wider mb-1">Status</span>
+                                <span className="text-white font-bold flex items-center gap-2">
+                                    <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                                    All Systems GO
+                                </span>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                {/* Bot List */}
-                <section className="card">
-                    <h2 className="text-heading-md mb-4">Registered Bots</h2>
-                    {bots.length === 0 ? (
-                        <div className="text-center py-8 text-secondary">
-                            No bots found. Create some to get started.
-                        </div>
-                    ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse">
-                                <thead>
-                                    <tr className="border-b border-default text-secondary text-sm">
-                                        <th className="py-2 px-4">Bot Name</th>
-                                        <th className="py-2 px-4">Email</th>
-                                        <th className="py-2 px-4">Votes</th>
-                                        <th className="py-2 px-4">Created</th>
-                                        <th className="py-2 px-4">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {bots.map(bot => (
-                                        <tr key={bot.id} className="border-b border-light hover:bg-background transition">
-                                            <td className="py-3 px-4 font-medium">{bot.username}</td>
-                                            <td className="py-3 px-4 text-secondary font-mono text-xs">{bot.email}</td>
-                                            <td className="py-3 px-4">
-                                                <span className="badge badge-info">{bot.vote_count}</span>
-                                            </td>
-                                            <td className="py-3 px-4 text-secondary text-sm">
-                                                {new Date(bot.created_at).toLocaleDateString()}
-                                            </td>
-                                            <td className="py-3 px-4">
-                                                <span className="badge badge-success">Ready</span>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                </section>
             </div>
         </div>
     );

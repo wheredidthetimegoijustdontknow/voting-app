@@ -5,6 +5,13 @@ export type Poll = {
   user_id: string;
   question_text: string;
   color_theme_id: number;
+  status: string;
+  starts_at: string;
+  ends_at?: string | null;
+  last_vote_at: string;
+  is_premium_timer: boolean;
+  deleted_at?: string | null;
+  icon?: string;
 };
 
 export type Vote = {

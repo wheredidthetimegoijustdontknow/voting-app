@@ -18,13 +18,23 @@
 - [x] **Admin HUD**: Floating admin controls.
 - [x] **Real-time Deletion**: Instant UI updates on poll removal.
 
-## Phase 7: Poll Improvements (ACTIVE)
-- [ ] **Collapsible Polls**: Compact summary bars for poll cards.
-- [ ] **Poll Constraints**: End dates/Time limits for polls.
-- [ ] **Inactive Polls**: Auto-delete polls inactive for X time.
-- [ ] **Expired Polls**: Auto-delete polls past end date.
+## Phase 7: Advanced Poll System (✅ COMPLETED)
+- [x] **Poll Colors**: Allow users to change the color of their polls.
+- [x] **Collapsible Polls**: Compact summary bars for poll cards.
+- [x] **Schema Migration**: Add `status`, `starts_at`, `ends_at`, `last_vote_at`, `is_premium_timer`, `deleted_at`.
+- [x] **Status Transitions**: Implement logic for `SCHEDULED` -> `ACTIVE` -> `ENDED`.
+- [x] **Dynamic Badges**: `PollCardBadge` with logic for `New!`, `Dormant`, `Ending Soon`.
+- [x] **Countdown Timer**: Real-time client-side timer component.
+- [x] **Soft Delete**: `REMOVED` status and restoration logic.
+- [x] **Flagging System**: Admin `REVIEW` status and reason tracking.
+- [x] **Automation**: Supabase cron for timed status updates.
+- [x] **Admin Features**: Ability to flag polls for review and remove polls.
 
-## Phase 8: User Improvements
+## Phase 8: User Improvements & Refinement
+- [ ] **Bug Fix: Emoji Icon Persistence & Re-rendering**:
+    - [ ] Fix `useRealtimeVotes` missing icon field.
+    - [ ] Update `updatePoll` to allow admin overrides.
+    - [ ] Optimize `PollCard` with `React.memo` to prevent global refreshes.
 - [ ] **User Management**: Roles and permissions structure.
 - [ ] **User Analytics**: Engagement metrics and behavior tracking.
 - [ ] **Admin Features**:

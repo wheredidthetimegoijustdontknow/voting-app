@@ -1,6 +1,7 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { fetchPollsWithResults } from '@/lib/polls/queries';
 import PageClient from '@/components/PageClient';
+import { getCurrentProfile } from '@/app/actions/profile';
 
 export const revalidate = 0;
 
@@ -9,10 +10,17 @@ export default async function Home() {
   const { data: { user } } = await supabase.auth.getUser();
   const polls = await fetchPollsWithResults();
 
+  let userRole: string | undefined;
+  if (user) {
+    const profileRes = await getCurrentProfile();
+    userRole = profileRes.data?.role;
+  }
+
   return (
     <PageClient
       polls={polls}
       userId={user?.id || null}
+      userRole={userRole}
     />
   );
 }

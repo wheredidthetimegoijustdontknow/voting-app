@@ -37,7 +37,8 @@ export function useEnhancedRealtimePresence({
     connectionError: null,
   });
 
-  const supabase = createClient();
+  // Fix: Ensure supabase client is stable across renders
+  const [supabase] = useState(() => createClient());
   const channelRef = useRef<RealtimeChannel | null>(null);
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastHeartbeatRef = useRef<number>(0);

@@ -32,13 +32,20 @@ interface PollData {
   user_id: string;
   question_text: string;
   color_theme_id: number;
+  status: string;
+  starts_at: string;
+  ends_at: string | null;
+  last_vote_at: string;
+  is_premium_timer: boolean;
+  deleted_at: string | null;
 }
 
 export function useRealtimeVotes({ initialPolls, userId }: UseRealtimeVotesOptions) {
   const [polls, setPolls] = useState<PollWithResults[]>(initialPolls);
   const [isConnected, setIsConnected] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
-  const supabase = createClient();
+  // Fix: Ensure supabase client is stable across renders
+  const [supabase] = useState(() => createClient());
   const channelRef = useRef<RealtimeChannel | null>(null);
   const isInitialized = useRef(false);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -95,6 +102,12 @@ export function useRealtimeVotes({ initialPolls, userId }: UseRealtimeVotesOptio
           user_id: pollData.user_id,
           question_text: pollData.question_text,
           color_theme_id: pollData.color_theme_id,
+          status: pollData.status,
+          starts_at: pollData.starts_at,
+          ends_at: pollData.ends_at,
+          last_vote_at: pollData.last_vote_at,
+          is_premium_timer: pollData.is_premium_timer,
+          deleted_at: pollData.deleted_at,
           creator_email: 'Anonymous',
           total_votes: (pollVotes || []).length,
           results: aggregated,
@@ -183,6 +196,12 @@ export function useRealtimeVotes({ initialPolls, userId }: UseRealtimeVotesOptio
             user_id: poll.user_id,
             question_text: poll.question_text,
             color_theme_id: poll.color_theme_id,
+            status: poll.status,
+            starts_at: poll.starts_at,
+            ends_at: poll.ends_at,
+            last_vote_at: poll.last_vote_at,
+            is_premium_timer: poll.is_premium_timer,
+            deleted_at: poll.deleted_at,
             creator_email: 'Anonymous',
             total_votes: votes.length,
             results: aggregated,

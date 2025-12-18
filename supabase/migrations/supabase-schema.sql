@@ -21,6 +21,12 @@ create table public.polls (
   user_id uuid not null,
   question_text text not null,
   updated_at timestamp with time zone not null default timezone ('utc'::text, now()),
+  status VARCHAR DEFAULT 'ACTIVE' CHECK (status IN ('DRAFT', 'SCHEDULED', 'ACTIVE', 'ENDED', 'REVIEW', 'REMOVED')),
+  starts_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  ends_at TIMESTAMP WITH TIME ZONE,
+  last_vote_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  is_premium_timer BOOLEAN DEFAULT FALSE,
+  deleted_at TIMESTAMP WITH TIME ZONE,
   constraint polls_pkey primary key (id),
   constraint polls_user_id_fkey foreign KEY (user_id) references profiles (id) on delete CASCADE
 ) TABLESPACE pg_default;
@@ -67,7 +73,7 @@ USING (auth.uid() = id);
 -- RLS Policies for polls
 CREATE POLICY "Polls are viewable by everyone"
 ON polls FOR SELECT
-USING (true);
+USING (status NOT IN ('REVIEW', 'REMOVED'));
 
 CREATE POLICY "Authenticated users can create polls"
 ON polls FOR INSERT
@@ -133,3 +139,20 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- Create a function to update last_vote_at on a poll
+CREATE OR REPLACE FUNCTION public.update_poll_last_vote()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE public.polls 
+    SET last_vote_at = NOW() 
+    WHERE id = NEW.poll_id;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger for new votes to track activity
+DROP TRIGGER IF EXISTS on_vote_update_last_vote ON public.votes;
+CREATE TRIGGER on_vote_update_last_vote
+    AFTER INSERT ON public.votes
+    FOR EACH ROW EXECUTE FUNCTION public.update_poll_last_vote();

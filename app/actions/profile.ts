@@ -12,6 +12,7 @@ export interface ActionResponse {
   data?: {
     username: string;
     userId: string;
+    role?: string;
   };
 }
 
@@ -38,9 +39,9 @@ export async function createProfile(username: string): Promise<ActionResponse> {
     // If validation fails, return a client-friendly error message
     const validationError = validationResult.error.issues[0].message;
     console.error('Zod validation failed:', validationResult.error.issues);
-    return { 
-      success: false, 
-      error: `Input validation failed: ${validationError}` 
+    return {
+      success: false,
+      error: `Input validation failed: ${validationError}`
     };
   }
 
@@ -48,7 +49,7 @@ export async function createProfile(username: string): Promise<ActionResponse> {
 
   try {
     const supabase = await createServerSupabaseClient();
-    
+
     // Check if the user is authenticated
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
@@ -69,9 +70,9 @@ export async function createProfile(username: string): Promise<ActionResponse> {
     }
 
     if (existingProfile) {
-      return { 
-        success: false, 
-        error: 'You already have a profile. Profile can only be created once.' 
+      return {
+        success: false,
+        error: 'You already have a profile. Profile can only be created once.'
       };
     }
 
@@ -83,9 +84,9 @@ export async function createProfile(username: string): Promise<ActionResponse> {
       .single();
 
     if (usernameCheck) {
-      return { 
-        success: false, 
-        error: 'This username is already taken. Please choose a different one.' 
+      return {
+        success: false,
+        error: 'This username is already taken. Please choose a different one.'
       };
     }
 
@@ -113,14 +114,14 @@ export async function createProfile(username: string): Promise<ActionResponse> {
     revalidatePath('/'); // Home page
     revalidatePath('/profile'); // Profile page if it exists
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       data: {
         username: newProfile.username,
         userId: newProfile.id,
       }
     };
-    
+
   } catch (e) {
     console.error('General Server Action error:', e);
     return { success: false, error: 'An unexpected server error occurred.' };
@@ -138,9 +139,9 @@ export async function updateProfileUsername(newUsername: string): Promise<Action
   if (!validationResult.success) {
     const validationError = validationResult.error.issues[0].message;
     console.error('Zod validation failed:', validationResult.error.issues);
-    return { 
-      success: false, 
-      error: `Input validation failed: ${validationError}` 
+    return {
+      success: false,
+      error: `Input validation failed: ${validationError}`
     };
   }
 
@@ -148,7 +149,7 @@ export async function updateProfileUsername(newUsername: string): Promise<Action
 
   try {
     const supabase = await createServerSupabaseClient();
-    
+
     // Check if the user is authenticated
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
@@ -164,9 +165,9 @@ export async function updateProfileUsername(newUsername: string): Promise<Action
       .single();
 
     if (usernameCheck) {
-      return { 
-        success: false, 
-        error: 'This username is already taken. Please choose a different one.' 
+      return {
+        success: false,
+        error: 'This username is already taken. Please choose a different one.'
       };
     }
 
@@ -192,14 +193,14 @@ export async function updateProfileUsername(newUsername: string): Promise<Action
     revalidatePath('/');
     revalidatePath('/profile');
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       data: {
         username: updatedProfile.username,
         userId: updatedProfile.id,
       }
     };
-    
+
   } catch (e) {
     console.error('General Server Action error:', e);
     return { success: false, error: 'An unexpected server error occurred.' };
@@ -209,10 +210,10 @@ export async function updateProfileUsername(newUsername: string): Promise<Action
 /**
  * Gets the current user's profile information.
  */
-export async function getCurrentProfile(): Promise<ActionResponse & { data?: { username: string; userId: string } }> {
+export async function getCurrentProfile(): Promise<ActionResponse & { data?: { username: string; userId: string; role: string } }> {
   try {
     const supabase = await createServerSupabaseClient();
-    
+
     // Check if the user is authenticated
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
@@ -222,7 +223,7 @@ export async function getCurrentProfile(): Promise<ActionResponse & { data?: { u
     // Get the user's profile
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('username, id')
+      .select('username, id, role')
       .eq('id', user.id)
       .single();
 
@@ -231,18 +232,38 @@ export async function getCurrentProfile(): Promise<ActionResponse & { data?: { u
         // Profile doesn't exist
         return { success: true, data: undefined };
       }
+
+      // Fallback: If role column is missing (e.g. migration not run), try fetching without it
+      const { data: fallbackProfile, error: fallbackError } = await supabase
+        .from('profiles')
+        .select('username, id')
+        .eq('id', user.id)
+        .single();
+
+      if (!fallbackError && fallbackProfile) {
+        return {
+          success: true,
+          data: {
+            username: fallbackProfile.username,
+            userId: fallbackProfile.id,
+            role: 'user', // Default to user if column missing
+          }
+        };
+      }
+
       console.error('Error fetching profile:', profileError);
       return { success: false, error: 'Failed to fetch profile.' };
     }
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       data: {
         username: profile.username,
         userId: profile.id,
+        role: profile.role || 'user',
       }
     };
-    
+
   } catch (e) {
     console.error('General Server Action error:', e);
     return { success: false, error: 'An unexpected server error occurred.' };

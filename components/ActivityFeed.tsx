@@ -12,16 +12,19 @@ interface VoteActivity {
     username: string;
     question_text: string;
     color_theme_id: number;
+    poll_id: string; // Added for tracking updates
 }
 
 export default function ActivityFeed() {
     const [activities, setActivities] = useState<VoteActivity[]>([]);
-    const supabase = createClient();
+    // Fix: Ensure supabase client is stable across renders
+    const [supabase] = useState(() => createClient());
     const scrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         // 1. Initial fetch of recent votes
         const fetchRecentVotes = async () => {
+            console.log('ActivityFeed: Fetching initial votes...');
             const { data, error } = await supabase
                 .from('votes')
                 .select(`
@@ -29,40 +32,46 @@ export default function ActivityFeed() {
           created_at,
           choice,
           profiles (username),
-          polls (question_text, color_theme_id)
+          polls (id, question_text, color_theme_id)
         `)
                 .order('created_at', { ascending: false })
                 .limit(15);
 
             if (data) {
-                console.log('Raw vote data:', data[0]); // Debug log
+                // console.log('ActivityFeed: Raw data received', data.length);
                 const transformed: VoteActivity[] = (data as any).map((v: any) => {
                     const pollData = v.polls;
-                    console.log('Poll data:', pollData); // Debug log
                     return {
                         id: v.id,
                         created_at: v.created_at,
                         choice: v.choice,
                         username: (v.profiles as any)?.username || 'Anonymous',
                         question_text: pollData?.question_text || 'Unknown Poll',
-                        color_theme_id: pollData?.color_theme_id || 1
+                        color_theme_id: pollData?.color_theme_id || 1,
+                        poll_id: v.polls?.id
                     };
                 });
-                console.log('Transformed activities:', transformed[0]); // Debug log
                 setActivities(transformed);
+            } else if (error) {
+                console.error('ActivityFeed: Fetch error', error);
             }
         };
 
         fetchRecentVotes();
 
-        // 2. Subscribe to real-time votes
+        // 2. Subscribe to real-time votes AND poll updates
+        // Fix: Use unique channel name to avoid conflicts
+        const channelName = `public:votes_activity_${Date.now()}`;
+        console.log(`ActivityFeed: Subscribing to channel ${channelName}`);
+
         const channel = supabase
-            .channel('public:votes_activity')
+            .channel(channelName)
             .on(
                 'postgres_changes',
                 { event: 'INSERT', schema: 'public', table: 'votes' },
                 async (payload) => {
-                    // When a new vote comes in, fetch its details (to get profile/poll info)
+                    console.log('ActivityFeed: INSERT vote payload:', payload);
+                    // When a new vote comes in, fetch its details
                     const { data, error } = await supabase
                         .from('votes')
                         .select(`
@@ -70,7 +79,7 @@ export default function ActivityFeed() {
               created_at,
               choice,
               profiles (username),
-              polls (question_text, color_theme_id)
+              polls (id, question_text, color_theme_id)
             `)
                         .eq('id', payload.new.id)
                         .single();
@@ -83,16 +92,52 @@ export default function ActivityFeed() {
                             choice: v.choice,
                             username: v.profiles?.username || 'Anonymous',
                             question_text: v.polls?.question_text || 'Unknown Poll',
-                            color_theme_id: v.polls?.color_theme_id || 1
+                            color_theme_id: v.polls?.color_theme_id || 1,
+                            poll_id: v.polls?.id
                         };
 
                         setActivities(prev => [newActivity, ...prev].slice(0, 20));
                     }
                 }
             )
-            .subscribe();
+            .on(
+                'postgres_changes',
+                { event: 'UPDATE', schema: 'public', table: 'polls' },
+                (payload) => {
+                    const updatedPoll = payload.new;
+                    setActivities(prev => {
+                        // Optimization: Check if we even care about this poll
+                        // identifying if any visible activity belongs to this poll
+                        const hasPoll = prev.some(a => a.poll_id === updatedPoll.id);
+                        if (!hasPoll) return prev; // No changes needed, skip re-render
+
+                        console.log('ActivityFeed: Received relevant poll UPDATE:', payload);
+                        return prev.map(activity => {
+                            if (activity.poll_id === updatedPoll.id) {
+                                // Only update if values actually changed
+                                if (activity.color_theme_id === updatedPoll.color_theme_id &&
+                                    activity.question_text === updatedPoll.question_text) {
+                                    return activity;
+                                }
+
+                                console.log(`ActivityFeed: Updating activity ${activity.id} color to ${updatedPoll.color_theme_id}`);
+                                return {
+                                    ...activity,
+                                    color_theme_id: updatedPoll.color_theme_id,
+                                    question_text: updatedPoll.question_text
+                                };
+                            }
+                            return activity;
+                        });
+                    });
+                }
+            )
+            .subscribe((status) => {
+                console.log('ActivityFeed: Realtime status:', status);
+            });
 
         return () => {
+            console.log('ActivityFeed: Cleaning up subscription');
             supabase.removeChannel(channel);
         };
     }, [supabase]);
@@ -131,10 +176,11 @@ export default function ActivityFeed() {
                         return (
                             <div
                                 key={activity.id}
-                                className="group relative pl-4 border-l-5 transition-all duration-300"
+                                className="group relative pl-4 border-l-4 transition-all duration-300"
                                 style={{
                                     borderColor: `var(--color-poll-${colorId})`,
-                                    '--activity-color': `var(--color-poll-${colorId})`
+                                    '--activity-color': `var(--color-poll-${colorId})`,
+                                    '--activity-soft': `var(--color-poll-${colorId}-soft)`
                                 } as React.CSSProperties}
                             >
                                 <div className="flex items-center justify-between mb-1.5">
@@ -147,7 +193,13 @@ export default function ActivityFeed() {
                                 </div>
 
                                 <p className="text-xs leading-relaxed mb-1" style={{ color: 'var(--color-text-secondary)' }}>
-                                    voted <span className="font-bold text-primary px-1.5 py-0.5 bg-primary/10 rounded-md">"{activity.choice}"</span>
+                                    voted <span
+                                        className="font-bold px-1.5 py-0.5 rounded-md"
+                                        style={{
+                                            color: 'var(--activity-color)',
+                                            backgroundColor: 'var(--activity-soft)'
+                                        }}
+                                    >"{activity.choice}"</span>
                                 </p>
                                 <p className="text-[10px] truncate font-medium opacity-70 italic" style={{ color: 'var(--color-text-muted)' }}>
                                     on: {activity.question_text}

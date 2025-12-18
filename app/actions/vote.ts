@@ -90,3 +90,44 @@ export async function submitVote(formData: FormData): Promise<ActionResponse> {
     return { success: false, error: 'An unexpected server error occurred.', data: null };
   }
 }
+
+// --- Retract Vote Action ---
+
+const RetractVoteSchema = z.object({
+  poll_id: z.string().uuid({ message: "Invalid Poll ID format." }),
+});
+
+export async function retractVote(pollId: string): Promise<ActionResponse> {
+  const validationResult = RetractVoteSchema.safeParse({ poll_id: pollId });
+
+  if (!validationResult.success) {
+    return { success: false, error: "Invalid Poll ID.", data: null };
+  }
+
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: 'Authentication required.', data: null };
+    }
+
+    const { error } = await supabase
+      .from('votes')
+      .delete()
+      .match({ poll_id: pollId, user_id: user.id });
+
+    if (error) {
+      console.error('Error retracting vote:', error);
+      return { success: false, error: error.message, data: null };
+    }
+
+    revalidatePath('/'); // Revalidate home/list
+    revalidatePath(`/poll/${pollId}`); // Revalidate specific poll
+    return { success: true, error: null };
+
+  } catch (e) {
+    console.error('Retract vote error:', e);
+    return { success: false, error: 'Server error.', data: null };
+  }
+}

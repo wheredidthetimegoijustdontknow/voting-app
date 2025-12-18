@@ -19,7 +19,7 @@ export async function fetchPollsWithResults(filterCreatorId?: string): Promise<P
   // Fetch polls
   let query = supabase
     .from('polls')
-    .select('id, created_at, user_id, question_text, color_theme_id')
+    .select('id, created_at, user_id, question_text, color_theme_id, status, starts_at, ends_at, last_vote_at, is_premium_timer, deleted_at, icon')
     .order('created_at', { ascending: false });
 
   if (filterCreatorId) {
@@ -70,11 +70,18 @@ export async function fetchPollsWithResults(filterCreatorId?: string): Promise<P
       user_id: poll.user_id,
       question_text: poll.question_text,
       color_theme_id: poll.color_theme_id,
+      status: poll.status,
+      starts_at: poll.starts_at,
+      ends_at: poll.ends_at,
+      last_vote_at: poll.last_vote_at,
+      is_premium_timer: poll.is_premium_timer,
+      deleted_at: poll.deleted_at,
       creator_email: 'Anonymous',
       total_votes: pollVotes.length,
       results: aggregateVotes(pollVotes, pollChoices.map((c: any) => c.choice)),
       user_has_voted: !!userVoteOnThisPoll,
       user_vote_choice: userVoteOnThisPoll?.choice,
+      icon: poll.icon,
     };
   });
 
@@ -92,7 +99,7 @@ export async function fetchPollById(pollId: string): Promise<PollWithResults | n
   // Fetch single poll
   const { data: poll, error: pollError } = await supabase
     .from('polls')
-    .select('id, created_at, user_id, question_text, color_theme_id')
+    .select('id, created_at, user_id, question_text, color_theme_id, status, starts_at, ends_at, last_vote_at, is_premium_timer, deleted_at, icon')
     .eq('id', pollId)
     .single();
 
@@ -134,11 +141,18 @@ export async function fetchPollById(pollId: string): Promise<PollWithResults | n
     user_id: poll.user_id,
     question_text: poll.question_text,
     color_theme_id: poll.color_theme_id,
+    status: poll.status,
+    starts_at: poll.starts_at,
+    ends_at: poll.ends_at,
+    last_vote_at: poll.last_vote_at,
+    is_premium_timer: poll.is_premium_timer,
+    deleted_at: poll.deleted_at,
     creator_email: 'Anonymous',
     total_votes: pollVotes?.length || 0,
     results: aggregateVotes(pollVotes || [], pollChoicesData?.map((c: any) => c.choice) || []),
     user_has_voted: !!userVoteOnThisPoll,
     user_vote_choice: userVoteOnThisPoll?.choice,
+    icon: poll.icon,
   };
 }
 

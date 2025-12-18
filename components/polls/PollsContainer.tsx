@@ -8,9 +8,10 @@ import type { PollWithResults } from '@/lib/polls/types';
 interface PollingPollListProps {
   initialPolls: PollWithResults[];
   userId: string | null;
+  userRole?: string;
 }
 
-export default function PollingPollList({ initialPolls, userId }: PollingPollListProps) {
+export default function PollingPollList({ initialPolls, userId, userRole }: PollingPollListProps) {
   const { polls, isConnected, connectionError, refresh } = useRealtimeVotes({
     initialPolls,
     userId
@@ -19,9 +20,9 @@ export default function PollingPollList({ initialPolls, userId }: PollingPollLis
   return (
     <div>
       <div className="flex flex-wrap justify-between items-center mb-6 gap-3">
-        <h2 
+        <h2
           className="text-heading-lg"
-          style={{ 
+          style={{
             color: 'var(--color-text-primary)',
             margin: 0,
             fontSize: 'var(--font-size-xl)',
@@ -30,7 +31,7 @@ export default function PollingPollList({ initialPolls, userId }: PollingPollLis
         >
           All Polls ({polls.length})
         </h2>
-        
+
         <UpdateIndicator
           isUpdating={!isConnected}
           lastUpdate={new Date()}
@@ -41,7 +42,7 @@ export default function PollingPollList({ initialPolls, userId }: PollingPollLis
 
       {/* Connection Error Display */}
       {connectionError && (
-        <div 
+        <div
           className="badge badge-warning"
           style={{
             backgroundColor: 'var(--color-warning-bg)',
@@ -57,7 +58,7 @@ export default function PollingPollList({ initialPolls, userId }: PollingPollLis
           }}
         >
           <div className="flex items-center gap-2">
-            <div 
+            <div
               style={{
                 width: '8px',
                 height: '8px',
@@ -87,67 +88,10 @@ export default function PollingPollList({ initialPolls, userId }: PollingPollLis
       )}
 
       {/* Connection Status */}
-      {isConnected ? (
-        <div 
-          className="badge badge-success"
-          style={{
-            backgroundColor: 'var(--color-success-bg)',
-            borderColor: 'var(--color-success-border)',
-            color: 'var(--color-success)',
-            padding: 'var(--spacing-sm)',
-            borderRadius: 'var(--radius-sm)',
-            borderWidth: '1px',
-            borderStyle: 'solid',
-            fontSize: 'var(--font-size-sm)',
-            marginBottom: 'var(--spacing-md)',
-            display: 'block'
-          }}
-        >
-          <div className="flex items-center gap-2">
-            <div 
-              style={{
-                width: '8px',
-                height: '8px',
-                backgroundColor: 'var(--color-success)',
-                borderRadius: 'var(--radius-full)',
-                animation: 'pulse 2s infinite'
-              }}
-            />
-            <span>Live updates active</span>
-          </div>
-        </div>
-      ) : !connectionError && (
-        <div 
-          className="badge badge-info"
-          style={{
-            backgroundColor: 'var(--color-info-bg)',
-            borderColor: 'var(--color-info-border)',
-            color: 'var(--color-info)',
-            padding: 'var(--spacing-sm)',
-            borderRadius: 'var(--radius-sm)',
-            borderWidth: '1px',
-            borderStyle: 'solid',
-            fontSize: 'var(--font-size-sm)',
-            marginBottom: 'var(--spacing-md)',
-            display: 'block'
-          }}
-        >
-          <div className="flex items-center gap-2">
-            <div 
-              style={{
-                width: '8px',
-                height: '8px',
-                backgroundColor: 'var(--color-info)',
-                borderRadius: 'var(--radius-full)'
-              }}
-            />
-            <span>Connecting to real-time updates...</span>
-          </div>
-        </div>
-      )}
+
 
       {polls.length === 0 ? (
-        <div 
+        <div
           className="text-center"
           style={{
             padding: '48px 24px',
@@ -157,9 +101,9 @@ export default function PollingPollList({ initialPolls, userId }: PollingPollLis
             boxShadow: 'var(--shadow-sm)'
           }}
         >
-          <p 
+          <p
             className="text-body"
-            style={{ 
+            style={{
               color: 'var(--color-text-primary)',
               margin: 0
             }}
@@ -176,6 +120,7 @@ export default function PollingPollList({ initialPolls, userId }: PollingPollLis
               isSignedIn={!!userId}
               onVoteSuccess={refresh}
               currentUserId={userId}
+              userRole={userRole}
             />
           ))}
         </div>

@@ -6,11 +6,11 @@ import { EditPollButton } from '../../../components/polls/EditPollButton';
 import { DeletePollButton } from '../../../components/polls/DeletePollButton';
 
 interface PollPageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export default async function PollPage({ params }: PollPageProps) {
-  const { id: pollId } = params;
+  const { id: pollId } = await params;
   const supabase = await createServerSupabaseClient();
 
   // 1. Fetch Poll Data

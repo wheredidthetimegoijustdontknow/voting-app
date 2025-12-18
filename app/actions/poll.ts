@@ -5,6 +5,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
+import type { PollWithResults } from '@/lib/polls/types';
 
 // Define the expected return shape for the client
 export interface ActionResponse {
@@ -15,6 +16,7 @@ export interface ActionResponse {
 // --- 1. Define Zod Schema for Poll Deletion Data ---
 const DeletePollSchema = z.object({
   pollId: z.string().uuid({ message: "Invalid Poll ID format. Must be a UUID." }),
+  permanent: z.boolean().optional().default(false),
 });
 
 /**
@@ -74,32 +76,26 @@ export async function deletePoll(pollId: string): Promise<ActionResponse> {
       return { success: false, error: 'You can only delete your own polls.' };
     }
 
-    // Use ADMIN client to perform the deletion
-    console.log('[deletePoll] Proceeding with Admin deletion...');
-
-    // 1. Delete associated choices and votes via admin client
-    const { error: votesError } = await adminSupabase.from('votes').delete().eq('poll_id', validatedData.pollId);
-    if (votesError) console.error('[deletePoll] Admin votes delete error:', votesError);
-
-    const { error: choicesError } = await adminSupabase.from('polls_choices').delete().eq('poll_id', validatedData.pollId);
-    if (choicesError) console.error('[deletePoll] Admin choices delete error:', choicesError);
-
-    // 2. Finally, delete the poll itself
-    const { error: deleteError } = await adminSupabase
+    // SOFT DELETE logic based on spec
+    console.log('[deletePoll] Performing soft delete...');
+    const { error: softDeleteError } = await adminSupabase
       .from('polls')
-      .delete()
+      .update({
+        status: 'REMOVED',
+        deleted_at: new Date().toISOString()
+      })
       .eq('id', validatedData.pollId);
 
-    if (deleteError) {
-      console.error('[deletePoll] Admin poll delete error:', deleteError);
-      return { success: false, error: `Failed to delete poll: ${deleteError.message}` };
+    if (softDeleteError) {
+      console.error('[deletePoll] Soft delete error:', softDeleteError);
+      return { success: false, error: `Failed to remove poll: ${softDeleteError.message}` };
     }
 
-    console.log('[deletePoll] Successfully deleted poll:', validatedData.pollId);
+    console.log('[deletePoll] Successfully soft-deleted poll:', validatedData.pollId);
 
     // Revalidate relevant paths
-    revalidatePath('/'); // Home page with poll list
-    revalidatePath(`/poll/${validatedData.pollId}`); // Individual poll page
+    revalidatePath('/');
+    revalidatePath(`/poll/${validatedData.pollId}`);
 
     return { success: true };
 
@@ -109,18 +105,183 @@ export async function deletePoll(pollId: string): Promise<ActionResponse> {
   }
 }
 
+/**
+ * Flags a poll for review (Admin/System action).
+ */
+export async function flagPoll(pollId: string, reason?: string): Promise<ActionResponse> {
+  try {
+    const adminSupabase = createAdminSupabaseClient();
+
+    const { error } = await adminSupabase
+      .from('polls')
+      .update({
+        status: 'REVIEW',
+        // We can store the reason in a new column or just log it for now
+      })
+      .eq('id', pollId);
+
+    if (error) {
+      console.error('[flagPoll] Error:', error);
+      return { success: false, error: 'Failed to flag poll.' };
+    }
+
+    revalidatePath('/');
+    revalidatePath(`/poll/${pollId}`);
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: 'Unexpected error flagging poll.' };
+  }
+}
+
+/**
+ * Fetches polls that are in REVIEW or REMOVED status (Admin only).
+ * Includes full results and choices for live preview.
+ */
+export async function fetchModerationPolls(): Promise<{ success: boolean; polls?: PollWithResults[]; error?: string }> {
+  try {
+    const adminSupabase = createAdminSupabaseClient();
+
+    // 1. Fetch target polls
+    const { data: polls, error: pollsError } = await adminSupabase
+      .from('polls')
+      .select('id, created_at, user_id, question_text, color_theme_id, status, starts_at, ends_at, last_vote_at, is_premium_timer, deleted_at, icon')
+      .in('status', ['REVIEW', 'REMOVED'])
+      .order('created_at', { ascending: false });
+
+    if (pollsError) throw pollsError;
+    if (!polls) return { success: true, polls: [] };
+
+    const pollIds = polls.map(p => p.id);
+
+    // 2. Fetch votes for these polls
+    const { data: votes, error: votesError } = await adminSupabase
+      .from('votes')
+      .select('id, created_at, poll_id, choice, user_id')
+      .in('poll_id', pollIds);
+
+    if (votesError) throw votesError;
+
+    // 3. Fetch choices for these polls
+    const { data: choices, error: choicesError } = await adminSupabase
+      .from('polls_choices')
+      .select('poll_id, choice')
+      .in('poll_id', pollIds);
+
+    if (choicesError) throw choicesError;
+
+    // 4. Aggregate results (borrowed logic from queries.ts)
+    const pollsWithResults = polls.map(poll => {
+      const pollVotes = votes?.filter(v => v.poll_id === poll.id) || [];
+      const pollChoices = choices?.filter(c => c.poll_id === poll.id) || [];
+
+      const counts: Record<string, number> = {};
+      pollChoices.forEach(c => counts[c.choice] = 0);
+      pollVotes.forEach(v => {
+        if (counts[v.choice] !== undefined) counts[v.choice]++;
+      });
+
+      const total = pollVotes.length;
+      const results = pollChoices.map(c => ({
+        choice: c.choice,
+        count: counts[c.choice],
+        percentage: total > 0 ? (counts[c.choice] / total) * 100 : 0
+      }));
+
+      return {
+        ...poll,
+        creator_email: 'Anonymous',
+        total_votes: total,
+        results,
+        user_has_voted: false, // Not relevant for admin view
+        user_vote_choice: undefined,
+        icon: poll.icon
+      } as PollWithResults;
+    });
+
+    return { success: true, polls: pollsWithResults };
+  } catch (e) {
+    console.error('[fetchModerationPolls] Error:', e);
+    return { success: false, error: 'Failed to fetch moderation queue.' };
+  }
+}
+
+/**
+ * Restores a removed or flagged poll to ACTIVE status.
+ */
+export async function restorePoll(pollId: string): Promise<ActionResponse> {
+  try {
+    const adminSupabase = createAdminSupabaseClient();
+    const { error } = await adminSupabase
+      .from('polls')
+      .update({
+        status: 'ACTIVE',
+        deleted_at: null,
+        // Optional: clear any review notes/reasons if we had them
+      })
+      .eq('id', pollId);
+
+    if (error) throw error;
+    revalidatePath('/');
+    revalidatePath(`/poll/${pollId}`);
+    return { success: true };
+  } catch (e) {
+    console.error('[restorePoll] Error:', e);
+    return { success: false, error: 'Failed to restore poll.' };
+  }
+}
+
+/**
+ * Alias for restorePoll specific to clearing flags.
+ */
+export async function unflagPoll(pollId: string): Promise<ActionResponse> {
+  return restorePoll(pollId);
+}
+
+/**
+ * Permanently deletes a poll and all associated data from the database.
+ * This is an IRREVERSIBLE admin action.
+ */
+export async function permanentlyDeletePoll(pollId: string): Promise<ActionResponse> {
+  try {
+    const adminSupabase = createAdminSupabaseClient();
+
+    // Deleting from 'polls' will cascade to 'polls_choices' and 'votes' 
+    // IF the foreign key constraints are set to ON DELETE CASCADE.
+    // Based on previous schema checks, they usually are.
+    const { error } = await adminSupabase
+      .from('polls')
+      .delete()
+      .eq('id', pollId);
+
+    if (error) {
+      console.error('[permanentlyDeletePoll] Error:', error);
+      return { success: false, error: `Permanent deletion failed: ${error.message}` };
+    }
+
+    revalidatePath('/');
+    return { success: true };
+  } catch (e) {
+    console.error('[permanentlyDeletePoll] Unexpected error:', e);
+    return { success: false, error: 'Unexpected error during permanent deletion.' };
+  }
+}
+
 // --- 3. Define Zod Schema for Poll Update Data ---
 const UpdatePollSchema = z.object({
   pollId: z.string().uuid({ message: "Invalid Poll ID format." }),
-  question_text: z.string().min(5, { message: "Question must be at least 5 characters long." }).max(200, { message: "Question must be less than 200 characters." }),
+  question_text: z.string().min(5, { message: "Question must be at least 5 characters long." }).max(200, { message: "Question must be less than 200 characters." }).optional(),
+  color_theme_id: z.number().int().min(1).max(25).optional(), // Extended range for new colors
+  icon: z.string().max(10).optional(),
+}).refine(data => data.question_text || data.color_theme_id || data.icon, {
+  message: "At least one field (question, color, or icon) must be provided."
 });
 
 /**
  * Handles secure update of a poll.
- * Only the question text can be updated to protect integrity of existing votes.
+ * Can update question text, color theme, and icon.
  */
-export async function updatePoll(pollId: string, question_text: string): Promise<ActionResponse> {
-  const validationResult = UpdatePollSchema.safeParse({ pollId, question_text });
+export async function updatePoll(pollId: string, updates: { question_text?: string, color_theme_id?: number, icon?: string }): Promise<ActionResponse> {
+  const validationResult = UpdatePollSchema.safeParse({ pollId, ...updates });
 
   if (!validationResult.success) {
     return {
@@ -139,10 +300,6 @@ export async function updatePoll(pollId: string, question_text: string): Promise
       return { success: false, error: 'Authentication required.' };
     }
 
-    // Attempt update. RLS policies "Users can update their own polls" should handle permission.
-    // However, Supabase RLS failure usually results in 0 rows affected or error, 
-    // but explicit check is friendlier.
-
     // Check ownership first for better error message
     const { data: poll } = await supabase
       .from('polls')
@@ -158,9 +315,15 @@ export async function updatePoll(pollId: string, question_text: string): Promise
       return { success: false, error: 'You do not have permission to edit this poll.' };
     }
 
+    // Dynamic update object
+    const updatePayload: any = { updated_at: new Date().toISOString() };
+    if (validatedData.question_text) updatePayload.question_text = validatedData.question_text;
+    if (validatedData.color_theme_id) updatePayload.color_theme_id = validatedData.color_theme_id;
+    if (validatedData.icon) updatePayload.icon = validatedData.icon;
+
     const { error } = await supabase
       .from('polls')
-      .update({ question_text: validatedData.question_text, updated_at: new Date().toISOString() })
+      .update(updatePayload)
       .eq('id', validatedData.pollId);
 
     if (error) {
@@ -183,12 +346,21 @@ export async function updatePoll(pollId: string, question_text: string): Promise
 const CreatePollSchema = z.object({
   question_text: z.string().min(5, { message: "Question must be at least 5 characters long." }).max(200, { message: "Question must be less than 200 characters." }),
   choices: z.array(z.string().min(1, { message: "Choice cannot be empty." })).min(2, { message: "At least 2 choices are required." }),
+  starts_at: z.string().datetime().optional(),
+  ends_at: z.string().datetime().nullable().optional(),
+  is_premium_timer: z.boolean().optional().default(false),
 });
 
 /**
  * Handles secure creation of a new poll.
  */
-export async function createPoll(formData: { question_text: string; choices: string[] }): Promise<ActionResponse> {
+export async function createPoll(formData: {
+  question_text: string;
+  choices: string[];
+  starts_at?: string;
+  ends_at?: string | null;
+  is_premium_timer?: boolean;
+}): Promise<ActionResponse> {
   const validationResult = CreatePollSchema.safeParse(formData);
 
   if (!validationResult.success) {
@@ -198,7 +370,7 @@ export async function createPoll(formData: { question_text: string; choices: str
     };
   }
 
-  const { question_text, choices } = validationResult.data;
+  const { question_text, choices, starts_at, ends_at, is_premium_timer } = validationResult.data;
 
   try {
     const supabase = await createServerSupabaseClient();
@@ -208,13 +380,26 @@ export async function createPoll(formData: { question_text: string; choices: str
       return { success: false, error: 'Authentication required.' };
     }
 
+    // Determine initial status
+    const now = new Date();
+    const startTime = starts_at ? new Date(starts_at) : now;
+    let initialStatus = 'ACTIVE';
+
+    if (startTime > now) {
+      initialStatus = 'SCHEDULED';
+    }
+
     // 1. Insert Poll
     const { data: poll, error: pollError } = await supabase
       .from('polls')
       .insert({
         question_text,
         user_id: user.id,
-        color_theme_id: Math.floor(Math.random() * 5) + 1, // Random theme 1-5
+        status: initialStatus,
+        starts_at: startTime.toISOString(),
+        ends_at: ends_at || null,
+        is_premium_timer: is_premium_timer || false,
+        color_theme_id: Math.floor(Math.random() * 5) + 1,
       })
       .select('id')
       .single();
