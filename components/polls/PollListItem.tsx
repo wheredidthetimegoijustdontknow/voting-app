@@ -33,7 +33,8 @@ export function PollListItem({ poll, currentUserId }: PollListItemProps) {
         <div className="mt-4 flex justify-end">
           <EditPollButton 
             pollId={poll.id} 
-            isCreator={isCreator} 
+            isCreator={isCreator}
+            questionText={poll.question}
             // We can remove isCreator if we trust the conditional rendering above, 
             // but it's kept here for clarity.
           />

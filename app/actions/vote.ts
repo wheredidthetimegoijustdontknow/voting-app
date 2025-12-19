@@ -15,6 +15,9 @@ const VoteSchema = z.object({
 
   // choice must be a non-empty string
   choice: z.string().min(1, { message: "Choice cannot be empty." }),
+  
+  // Optional impersonation info
+  impersonated_user_id: z.string().uuid().optional(),
 });
 
 // Define the expected return shape for the client
@@ -36,6 +39,7 @@ export async function submitVote(formData: FormData): Promise<ActionResponse> {
   const rawData = {
     poll_id: formData.get('poll_id'),
     choice: formData.get('choice'),
+    impersonated_user_id: formData.get('impersonated_user_id'),
   };
 
   // --- 3. Server-side Validation with Zod ---
@@ -65,12 +69,25 @@ export async function submitVote(formData: FormData): Promise<ActionResponse> {
       return { success: false, error: 'Authentication required to submit a vote.', data: null };
     }
 
-    // 4. Insert the validated vote row
+    // 4. Check if user has already voted on this poll
+    const userIdToUse = validatedData.impersonated_user_id || user.id;
+    const { data: existingVote } = await supabase
+      .from('votes')
+      .select('id')
+      .eq('poll_id', validatedData.poll_id)
+      .eq('user_id', userIdToUse)
+      .single();
+      
+    if (existingVote) {
+      return { success: false, error: 'You have already voted on this poll.', data: null };
+    }
+    
+    // 5. Insert the validated vote row
     const { error } = await supabase.from('votes').insert([
       {
         poll_id: validatedData.poll_id,
         choice: validatedData.choice,
-        user_id: user.id // Explicitly adding user_id
+        user_id: userIdToUse // Use impersonated user ID if provided, otherwise current user
       },
     ]);
 

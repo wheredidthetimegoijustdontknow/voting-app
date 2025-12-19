@@ -14,13 +14,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Real-Time Voting App",
+  title: "Polls On Parade",
   description: "A modern real-time voting application with light and dark themes",
 };
 
 import { ToastProvider } from "@/components/ui/ToastContext";
 import { VoteToastListener } from "@/components/polls/VoteToastListener";
 import AppLayout from "@/components/AppLayout";
+import { AdminImpersonationProvider } from "@/contexts/AdminImpersonationContext";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/app/actions/profile";
 
@@ -46,16 +47,18 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider>
-          <ToastProvider>
-            <VoteToastListener />
-            <AppLayout
-              userId={user?.id || null}
-              initialUsername={initialUsername}
-              initialRole={initialRole}
-            >
-              {children}
-            </AppLayout>
-          </ToastProvider>
+          <AdminImpersonationProvider>
+            <ToastProvider>
+              <VoteToastListener />
+              <AppLayout
+                userId={user?.id || null}
+                initialUsername={initialUsername}
+                initialRole={initialRole}
+              >
+                {children}
+              </AppLayout>
+            </ToastProvider>
+          </AdminImpersonationProvider>
         </ThemeProvider>
       </body>
     </html>

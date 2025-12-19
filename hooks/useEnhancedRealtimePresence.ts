@@ -7,6 +7,8 @@ import { RealtimeChannel } from '@supabase/supabase-js';
 interface PresenceUser {
   id: string;
   username?: string;
+  aura_color?: string;
+  spirit_emoji?: string;
   joined_at: string;
   last_seen?: number; // Track when we last saw this user
 }
@@ -51,7 +53,7 @@ export function useEnhancedRealtimePresence({
   const cacheCleanupIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Enhanced username fetching with batching and error details
-  const fetchUsernames = useCallback(async (userIds: string[]): Promise<Record<string, string>> => {
+  const fetchUserProfiles = useCallback(async (userIds: string[]): Promise<Record<string, { username: string; aura_color: string; spirit_emoji: string }>> => {
     // 1. Filter only valid UUIDs to avoid DB errors (e.g. "anonymous_viewer" is not a UUID)
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     const validUserIds = userIds.filter(id => id && uuidRegex.test(id));
@@ -60,7 +62,7 @@ export function useEnhancedRealtimePresence({
     const uniqueIds = Array.from(new Set(validUserIds));
     if (uniqueIds.length === 0) return {};
 
-    const usernameMap: Record<string, string> = {};
+    const profileMap: Record<string, { username: string; aura_color: string; spirit_emoji: string }> = {};
     const batchSize = 50;
 
     try {
@@ -69,7 +71,7 @@ export function useEnhancedRealtimePresence({
 
         const { data: profiles, error } = await supabase
           .from('profiles')
-          .select('id, username')
+          .select('id, username, aura_color, spirit_emoji')
           .in('id', batch);
 
         if (error) {
@@ -79,12 +81,16 @@ export function useEnhancedRealtimePresence({
 
         profiles?.forEach((profile: any) => {
           if (profile.id && profile.username) {
-            usernameMap[profile.id] = profile.username;
+            profileMap[profile.id] = {
+              username: profile.username,
+              aura_color: profile.aura_color || '#8A2BE2',
+              spirit_emoji: profile.spirit_emoji || '👤'
+            };
           }
         });
       }
 
-      return usernameMap;
+      return profileMap;
     } catch (error) {
       console.error('[Presence] Fatal error in fetchUsernames:', error);
       return {};
@@ -95,13 +101,18 @@ export function useEnhancedRealtimePresence({
   const updatePresenceWithUsernames = useCallback(async (users: PresenceUser[]) => {
     const now = Date.now();
     const userIds = users.map(user => user.id);
-    const usernameMap = await fetchUsernames(userIds);
+    const profileMap = await fetchUserProfiles(userIds);
 
-    const usersWithUsernames = users.map(user => ({
-      ...user,
-      username: usernameMap[user.id] || user.username || 'Anonymous User',
-      last_seen: now, // Mark when we saw them
-    }));
+    const usersWithUsernames = users.map(user => {
+      const profile = profileMap[user.id];
+      return {
+        ...user,
+        username: profile?.username || user.username || 'Anonymous User',
+        aura_color: profile?.aura_color || '#8A2BE2',
+        spirit_emoji: profile?.spirit_emoji || '👤',
+        last_seen: now, // Mark when we saw them
+      };
+    });
 
     // Update cache with active users
     usersWithUsernames.forEach(user => {
@@ -127,7 +138,7 @@ export function useEnhancedRealtimePresence({
       onlineCount: finalUsers.length,
       connectionError: null,
     }));
-  }, [fetchUsernames]);
+  }, [fetchUserProfiles]);
 
   // Enhanced heartbeat with better error handling
   const sendHeartbeat = useCallback(async () => {

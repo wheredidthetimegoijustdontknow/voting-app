@@ -28,7 +28,7 @@ export function VoteToastListener() {
                         // We select 'username' from 'profiles' where id matches the voter's user_id
                         const { data, error } = await supabase
                             .from('profiles')
-                            .select('username')
+                            .select('username, aura_color, spirit_emoji')
                             .eq('id', newVote.user_id)
                             .single();
 
@@ -44,9 +44,11 @@ export function VoteToastListener() {
                             .single();
 
                         const voterName = data?.username || 'A user';
+                        const voterEmoji = data?.spirit_emoji || '👤';
+                        const voterAura = data?.aura_color || '#8A2BE2';
                         const pollQuestion = pollData?.question_text || 'a poll';
 
-                        toast(`${voterName} voted "${newVote.choice}" on: ${pollQuestion}`, {
+                        toast(`${voterEmoji} ${voterName} voted "${newVote.choice}" on: ${pollQuestion}`, {
                             type: 'info',
                             duration: 5000,
                         });

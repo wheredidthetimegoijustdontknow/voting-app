@@ -90,9 +90,10 @@ export default function OnlineUsersBanner({ userId, currentUsername }: OnlineUse
                     <div
                       key={`${user.id}-${index}`}
                       className="text-sm flex items-center gap-2"
-                      style={{ color: 'var(--color-text-primary)' }}
+                      style={{ color: user.aura_color || 'var(--color-text-primary)' }}
                     >
                       <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                      <span>{user.spirit_emoji || '👤'}</span>
                       <span>{user.username || 'Anonymous User'}</span>
                     </div>
                   ))}
@@ -100,10 +101,11 @@ export default function OnlineUsersBanner({ userId, currentUsername }: OnlineUse
                     <div
                       key={`${user.id}-cached-${index}`}
                       className="text-sm flex items-center gap-2"
-                      style={{ color: 'var(--color-text-muted)' }}
+                      style={{ color: user.aura_color ? `${user.aura_color}80` : 'var(--color-text-muted)' }}
                       title="Recently disconnected (cached)"
                     >
                       <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
+                      <span>{user.spirit_emoji || '👤'}</span>
                       <span>{user.username || 'Anonymous User'}</span>
                       <span className="text-xs">(away)</span>
                     </div>

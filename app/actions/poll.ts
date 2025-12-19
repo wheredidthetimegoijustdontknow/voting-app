@@ -272,15 +272,16 @@ const UpdatePollSchema = z.object({
   question_text: z.string().min(5, { message: "Question must be at least 5 characters long." }).max(200, { message: "Question must be less than 200 characters." }).optional(),
   color_theme_id: z.number().int().min(1).max(25).optional(), // Extended range for new colors
   icon: z.string().max(10).optional(),
-}).refine(data => data.question_text || data.color_theme_id || data.icon, {
-  message: "At least one field (question, color, or icon) must be provided."
+  status: z.enum(['DRAFT', 'ACTIVE', 'ENDED', 'SCHEDULED']).optional(),
+}).refine(data => data.question_text || data.color_theme_id || data.icon || data.status, {
+  message: "At least one field (question, color, icon, or status) must be provided."
 });
 
 /**
  * Handles secure update of a poll.
  * Can update question text, color theme, and icon.
  */
-export async function updatePoll(pollId: string, updates: { question_text?: string, color_theme_id?: number, icon?: string }): Promise<ActionResponse> {
+export async function updatePoll(pollId: string, updates: { question_text?: string, color_theme_id?: number, icon?: string, status?: string }): Promise<ActionResponse> {
   const validationResult = UpdatePollSchema.safeParse({ pollId, ...updates });
 
   if (!validationResult.success) {
@@ -329,6 +330,7 @@ export async function updatePoll(pollId: string, updates: { question_text?: stri
     if (validatedData.question_text) updatePayload.question_text = validatedData.question_text;
     if (validatedData.color_theme_id) updatePayload.color_theme_id = validatedData.color_theme_id;
     if (validatedData.icon) updatePayload.icon = validatedData.icon;
+    if (validatedData.status) updatePayload.status = validatedData.status;
 
     const { error } = await supabase
       .from('polls')

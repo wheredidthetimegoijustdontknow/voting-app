@@ -74,15 +74,25 @@
 - [x] **Automated Transitions**: Cron/Edge functions for status updates (e.g., Scheduled -> Active).
 - [x] **Inactivity Tracking**: `last_vote_at` tracking for `[Dormant]` badge logic.
 - [x] **Admin Features**: Ability to flag polls for review and remove polls.
-
-## Phase 8: User Improvements & Refinement
 - [x] **Stability**: Fix Emoji Icon persistence and re-render optimizations.
-- [ ] **User Management**: Add user roles and permissions for different levels of access.
-- [ ] **User Analytics**: Real-time engagement metrics and user behavior.
-- [ ] **Admin Features**:     
-    - [ ] **Poll Constraints**: Change dates/Time limits for polls.
-    - [ ] **Poll Management**: Edit, delete, and manage polls.
-    - [ ] **Customization**: Allow admins to change poll colors/emojis/avatars for any poll.
+
+## Phase 8: User Identity & Refinement (Operational Order)
+- [x] **Data Layer: Profiles Extension**
+    - [x] Migration: Add `bio`, `aura_color`, `spirit_emoji`, and `role` to `profiles` table.
+    - [x] RLS Update: Allow users to `UPDATE` their own bio/aura/emoji.
+- [ ] **Structural UI: Profile System**
+    - [ ] Create dynamic route `/profile/[username]` with layout for stats and bio.
+    - [ ] Implement Profile Sidebar link to active user's page.
+- [ ] **Identity Features: Expression**
+    - [ ] **The Aura System**: Implement color-themed UI rendering based on `aura_color`.
+    - [ ] **Emoji-atar**: Replace static avatars with user-selected `spirit_emoji`.
+    - [ ] **Voter Archetypes**: Logic to display titles (e.g., "The Early Bird") based on voting history.
+- [ ] **Admin & Debug Tools**
+    - [ ] **Impersonation Mode**: Admin toggle to simulate viewing the app as a specific `profile_id`.
+    - [ ] **Global Overrides**: Admin ability to edit any poll's time limits or status.
+- [ ] **Refinements & Bug Fixes**
+    - [ ] Fix: Activity Feed `accentcolor` background bleeding issue.
+    - [ ] Fix: Ensure Poll Emoji persists in real-time vote broadcasts.
 
 ## Phase 9: User Analytics and Poll Analytics
 - [ ] **User Analytics**: Real-time engagement metrics and user behavior.

@@ -114,7 +114,7 @@ export function usePollingPolls({
       }, {} as Record<string, Choice[]>);
 
       // Build polls with results
-      const pollsWithResults: PollWithResults[] = (pollsData as PollData[]).map((poll) => {
+      const pollsWithResults: PollWithResults[] = pollsData.map((poll: any) => {
         const votes = votesByPoll[poll.id] || [];
         const choices = choicesByPoll[poll.id] || [];
         const choiceTexts = choices.map((c) => c.choice);
@@ -123,10 +123,7 @@ export function usePollingPolls({
         const userVote = userId ? votes.find((v) => v.user_id === userId) : null;
 
         return {
-          id: poll.id,
-          created_at: poll.created_at,
-          user_id: poll.user_id,
-          question_text: poll.question_text,
+          ...poll, // Spread all original poll fields
           creator_email: 'Anonymous', // Simplified to avoid join issues
           total_votes: votes.length,
           results: aggregated,

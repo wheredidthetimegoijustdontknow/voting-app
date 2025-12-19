@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { submitVote } from '@/app/actions/vote';
+import { useAdminImpersonation } from '@/contexts/AdminImpersonationContext';
 
 interface VoteButtonProps {
   pollId: string;
@@ -16,38 +18,57 @@ export default function VoteButton({
   isSelected,
   onVoteSuccess
 }: VoteButtonProps) {
+  const { isImpersonating, impersonatedUser } = useAdminImpersonation();
+  const router = useRouter();
   const [isVoting, setIsVoting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [optimisticVoted, setOptimisticVoted] = useState(false);
 
   const handleVote = async () => {
+    // Prevent double voting
+    if (isVoting || optimisticVoted || isSelected) return;
+    
     setIsVoting(true);
     setError(null);
+    setOptimisticVoted(true); // Immediately show voted state
 
     try {
       // Create FormData to send to the Server Action
       const formData = new FormData();
       formData.append('poll_id', pollId);
       formData.append('choice', choice);
+      
+      // If impersonating, include the impersonated user's ID
+      if (isImpersonating && impersonatedUser) {
+        formData.append('impersonated_user_id', impersonatedUser.id);
+      }
 
       // Call the Server Action directly
       const result = await submitVote(formData);
 
       if (!result.success) {
+        // Revert optimistic update on error
+        setOptimisticVoted(false);
         throw new Error(result.error || 'Failed to vote');
       }
 
-      // Trigger immediate refresh after successful vote
+      // Trigger refresh to sync with server state
       if (onVoteSuccess) {
         onVoteSuccess();
       }
+      
+      // Refresh router to ensure data consistency
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to vote');
+      setOptimisticVoted(false); // Revert on error
     } finally {
       setIsVoting(false);
     }
   };
 
-  if (isSelected) {
+  // Show voted state if either selected or optimistic vote
+  if (isSelected || optimisticVoted) {
     return (
       <button
         disabled
@@ -67,7 +88,7 @@ export default function VoteButton({
           transition: 'all 0.15s ease',
         }}
       >
-        ✓ Your Vote
+        {optimisticVoted ? 'Voting...' : '✓ Your Vote'}
       </button>
     );
   }
@@ -76,7 +97,7 @@ export default function VoteButton({
     <div className="space-y-2">
       <button
         onClick={handleVote}
-        disabled={isVoting}
+        disabled={isVoting || optimisticVoted || isSelected}
         style={{
           width: '100%',
           padding: '8px 16px',
@@ -114,7 +135,7 @@ export default function VoteButton({
           e.currentTarget.style.boxShadow = 'none';
         }}
       >
-        {isVoting ? 'Voting...' : 'Vote'}
+        {isVoting ? 'Voting...' : isImpersonating ? `Vote as @${impersonatedUser?.username}` : 'Vote'}
       </button>
 
       {error && (

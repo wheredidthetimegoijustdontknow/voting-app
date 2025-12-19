@@ -3,15 +3,16 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ListFilter, ShieldCheck, ChevronLeft, ChevronRight, Sun, Moon, Bot, ShieldAlert, Users, ChevronDown } from 'lucide-react';
+import { LayoutDashboard, ListFilter, ShieldCheck, ChevronLeft, ChevronRight, Sun, Moon, Bot, ShieldAlert, Users, ChevronDown, User } from 'lucide-react';
 import { useTheme } from '@/lib/theme-provider';
 import AuthButton from '../auth/AuthButton';
 
 interface SidebarNavProps {
     userRole?: string;
+    currentUsername?: string;
 }
 
-export function SidebarNav({ userRole }: SidebarNavProps) {
+export function SidebarNav({ userRole, currentUsername }: SidebarNavProps) {
     const pathname = usePathname();
     const { theme, toggleTheme } = useTheme();
     const [isCollapsed, setIsCollapsed] = useState(false);
@@ -24,6 +25,7 @@ export function SidebarNav({ userRole }: SidebarNavProps) {
     const navItems = [
         { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
         { name: 'Public Polls', href: '/', icon: ListFilter },
+        ...(currentUsername ? [{ name: 'My Profile', href: `/profile/${currentUsername}`, icon: User }] : []),
     ];
 
     const adminSubItems = [
@@ -55,21 +57,17 @@ export function SidebarNav({ userRole }: SidebarNavProps) {
             {/* Header */}
             <div className="p-4 flex items-center justify-between" style={{ minHeight: '72px' }}>
                 <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity overflow-hidden">
-                    <div
-                        className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xl shadow-lg shadow-indigo-500/20 shrink-0"
-                        style={{
-                            backgroundColor: 'var(--color-primary)',
-                            color: '#FFFFFF'
-                        }}
-                    >
-                        V
-                    </div>
+                    <img
+                        src="/Polls_on_Parade_logo_transparent.PNG"
+                        alt="Polls On Parade Logo"
+                        className="w-10 h-10 rounded-xl shrink-0"
+                    />
                     {isExpanded && (
                         <span
                             className="font-bold text-lg tracking-tight whitespace-nowrap"
                             style={{ color: 'var(--color-text-primary)' }}
                         >
-                            Voting App
+                            Polls On Parade
                         </span>
                     )}
                 </Link>

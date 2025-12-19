@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { formatPollDate } from '@/lib/polls/helpers';
+import { useAdminImpersonation } from '@/contexts/AdminImpersonationContext';
 import { Activity, User, Vote as VoteIcon } from 'lucide-react';
 
 interface VoteActivity {
@@ -10,12 +11,15 @@ interface VoteActivity {
     created_at: string;
     choice: string;
     username: string;
+    aura_color: string;
+    spirit_emoji: string;
     question_text: string;
     color_theme_id: number;
     poll_id: string; // Added for tracking updates
 }
 
 export default function ActivityFeed() {
+    const { isImpersonating, impersonatedUser } = useAdminImpersonation();
     const [activities, setActivities] = useState<VoteActivity[]>([]);
     // Fix: Ensure supabase client is stable across renders
     const [supabase] = useState(() => createClient());
@@ -25,17 +29,26 @@ export default function ActivityFeed() {
         // 1. Initial fetch of recent votes
         const fetchRecentVotes = async () => {
             console.log('ActivityFeed: Fetching initial votes...');
-            const { data, error } = await supabase
+            
+            let query = supabase
                 .from('votes')
                 .select(`
           id,
           created_at,
           choice,
-          profiles (username),
+          profiles (username, aura_color, spirit_emoji),
           polls (id, question_text, color_theme_id)
         `)
                 .order('created_at', { ascending: false })
                 .limit(15);
+            
+            // If impersonating, only show votes from the impersonated user
+            if (isImpersonating && impersonatedUser) {
+                console.log(`ActivityFeed: Impersonating ${impersonatedUser.username}, filtering votes...`);
+                query = query.eq('profiles.username', impersonatedUser.username);
+            }
+
+            const { data, error } = await query;
 
             if (data) {
                 // console.log('ActivityFeed: Raw data received', data.length);
@@ -46,6 +59,8 @@ export default function ActivityFeed() {
                         created_at: v.created_at,
                         choice: v.choice,
                         username: (v.profiles as any)?.username || 'Anonymous',
+                        aura_color: (v.profiles as any)?.aura_color || '#8A2BE2',
+                        spirit_emoji: (v.profiles as any)?.spirit_emoji || '👤',
                         question_text: pollData?.question_text || 'Unknown Poll',
                         color_theme_id: pollData?.color_theme_id || 1,
                         poll_id: v.polls?.id
@@ -71,6 +86,22 @@ export default function ActivityFeed() {
                 { event: 'INSERT', schema: 'public', table: 'votes' },
                 async (payload) => {
                     console.log('ActivityFeed: INSERT vote payload:', payload);
+                    
+                    // If impersonating, only show votes from the impersonated user
+                    if (isImpersonating && impersonatedUser) {
+                        // Fetch the vote details to check if it's from the impersonated user
+                        const { data: voteProfile } = await supabase
+                            .from('votes')
+                            .select('profiles(username)')
+                            .eq('id', payload.new.id)
+                            .single();
+                            
+                        if ((voteProfile as any)?.profiles?.username !== impersonatedUser.username) {
+                            console.log('ActivityFeed: Ignoring vote from different user while impersonating');
+                            return; // Ignore votes from other users
+                        }
+                    }
+                    
                     // When a new vote comes in, fetch its details
                     const { data, error } = await supabase
                         .from('votes')
@@ -78,7 +109,7 @@ export default function ActivityFeed() {
               id,
               created_at,
               choice,
-              profiles (username),
+              profiles (username, aura_color, spirit_emoji),
               polls (id, question_text, color_theme_id)
             `)
                         .eq('id', payload.new.id)
@@ -91,6 +122,8 @@ export default function ActivityFeed() {
                             created_at: v.created_at,
                             choice: v.choice,
                             username: v.profiles?.username || 'Anonymous',
+                            aura_color: v.profiles?.aura_color || '#8A2BE2',
+                            spirit_emoji: v.profiles?.spirit_emoji || '👤',
                             question_text: v.polls?.question_text || 'Unknown Poll',
                             color_theme_id: v.polls?.color_theme_id || 1,
                             poll_id: v.polls?.id
@@ -184,9 +217,12 @@ export default function ActivityFeed() {
                                 } as React.CSSProperties}
                             >
                                 <div className="flex items-center justify-between mb-1.5">
-                                    <span className="text-xs font-bold truncate pr-2" style={{ color: 'var(--color-text-primary)' }}>
-                                        {activity.username}
-                                    </span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm">{activity.spirit_emoji}</span>
+                                        <span className="text-xs font-bold truncate pr-2" style={{ color: activity.aura_color }}>
+                                            {activity.username}
+                                        </span>
+                                    </div>
                                     <span className="text-[10px] whitespace-nowrap opacity-60 font-medium" style={{ color: 'var(--color-text-muted)' }}>
                                         {formatPollDate(activity.created_at)}
                                     </span>
@@ -194,10 +230,12 @@ export default function ActivityFeed() {
 
                                 <p className="text-xs leading-relaxed mb-1" style={{ color: 'var(--color-text-secondary)' }}>
                                     voted <span
-                                        className="font-bold px-1.5 py-0.5 rounded-md"
+                                        className="font-bold px-1.5 py-0.5 rounded-md inline-block"
                                         style={{
                                             color: 'var(--activity-color)',
-                                            backgroundColor: 'var(--activity-soft)'
+                                            backgroundColor: 'var(--activity-soft)',
+                                            marginLeft: '4px',
+                                            marginRight: '4px'
                                         }}
                                     >"{activity.choice}"</span>
                                 </p>

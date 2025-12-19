@@ -4,6 +4,7 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
+import { isReservedUsername } from '@/lib/utils/reserved-usernames';
 
 // Define the expected return shape for the client
 export interface ActionResponse {
@@ -16,13 +17,26 @@ export interface ActionResponse {
   };
 }
 
+// Profile update data interface
+export interface ProfileUpdateData {
+  bio?: string | null;
+  aura_color?: string;
+  spirit_emoji?: string;
+}
+
 // --- 1. Define Zod Schema for Profile Creation Data ---
 const CreateProfileSchema = z.object({
   username: z.string()
     .min(3, { message: "Username must be at least 3 characters long." })
     .max(20, { message: "Username must be no more than 20 characters long." })
     .regex(/^[a-zA-Z0-9_]+$/, { message: "Username can only contain letters, numbers, and underscores." })
-    .transform(username => username.toLowerCase()), // Convert to lowercase for consistency
+    .refine((username) => {
+      // Check if username is reserved (case-insensitive)
+      if (isReservedUsername(username)) {
+        throw new Error(`The username "${username}" is reserved and cannot be used.`);
+      }
+      return true;
+    }, { message: "This username is reserved and cannot be used." }),
 });
 
 /**
@@ -76,17 +90,17 @@ export async function createProfile(username: string): Promise<ActionResponse> {
       };
     }
 
-    // Check if username is already taken
+    // Check if username is already taken (case-insensitive check)
     const { data: usernameCheck, error: usernameError } = await supabase
       .from('profiles')
       .select('username')
-      .eq('username', validatedData.username)
+      .ilike('username', validatedData.username)
       .single();
 
     if (usernameCheck) {
       return {
         success: false,
-        error: 'This username is already taken. Please choose a different one.'
+        error: `This username is already taken. Please choose a different one.`
       };
     }
 
@@ -156,11 +170,11 @@ export async function updateProfileUsername(newUsername: string): Promise<Action
       return { success: false, error: 'Authentication required to update profile.' };
     }
 
-    // Check if username is already taken by someone else
+    // Check if username is already taken by someone else (case-insensitive check)
     const { data: usernameCheck, error: usernameError } = await supabase
       .from('profiles')
       .select('id, username')
-      .eq('username', validatedData.username)
+      .ilike('username', validatedData.username)
       .neq('id', user.id) // Exclude current user's own profile
       .single();
 
@@ -261,6 +275,66 @@ export async function getCurrentProfile(): Promise<ActionResponse & { data?: { u
         username: profile.username,
         userId: profile.id,
         role: profile.role || 'user',
+      }
+    };
+
+  } catch (e) {
+    console.error('General Server Action error:', e);
+    return { success: false, error: 'An unexpected server error occurred.' };
+  }
+}
+
+/**
+ * Updates a user's profile with bio, aura color, and spirit emoji
+ * @param userId - The user's ID
+ * @param updates - The profile updates (bio, aura_color, spirit_emoji)
+ */
+export async function updateProfile(userId: string, updates: ProfileUpdateData): Promise<ActionResponse> {
+  try {
+    const supabase = await createServerSupabaseClient();
+
+    // Check if the user is authenticated
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: 'Authentication required to update profile.' };
+    }
+
+    // Validate inputs
+    if (updates.aura_color && !/^#[0-9A-F]{6}$/i.test(updates.aura_color)) {
+      return { success: false, error: 'Invalid aura color format. Use hex color like #8A2BE2' };
+    }
+
+    if (updates.spirit_emoji && updates.spirit_emoji.length > 2) {
+      return { success: false, error: 'Spirit emoji must be 1-2 characters' };
+    }
+
+    // Update the profile
+    const updateData: any = {};
+    if (updates.bio !== undefined) updateData.bio = updates.bio;
+    if (updates.aura_color !== undefined) updateData.aura_color = updates.aura_color;
+    if (updates.spirit_emoji !== undefined) updateData.spirit_emoji = updates.spirit_emoji;
+
+    const { data: updatedProfile, error: updateError } = await supabase
+      .from('profiles')
+      .update(updateData)
+      .eq('id', userId)
+      .select('username, id, bio, aura_color, spirit_emoji')
+      .single();
+
+    if (updateError) {
+      console.error('Error updating profile:', updateError);
+      return { success: false, error: `Failed to update profile: ${updateError.message}` };
+    }
+
+    // Revalidate relevant paths
+    revalidatePath(`/profile/${updatedProfile.username}`);
+    revalidatePath('/'); // Home page for activity feed
+
+    return {
+      success: true,
+      data: {
+        username: updatedProfile.username,
+        userId: updatedProfile.id,
       }
     };
 

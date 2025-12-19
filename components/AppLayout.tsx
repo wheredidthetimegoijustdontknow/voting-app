@@ -5,6 +5,7 @@ import { SidebarNav } from './layout/SidebarNav';
 import OnlineUsersBanner from './OnlineUsersBanner';
 import ProfileChecker from './ProfileChecker';
 import ActivityFeed from './ActivityFeed';
+import { useAdminImpersonation } from '@/contexts/AdminImpersonationContext';
 import { ChevronRight, ChevronLeft, Activity } from 'lucide-react';
 
 interface AppLayoutProps {
@@ -15,17 +16,23 @@ interface AppLayoutProps {
 }
 
 export default function AppLayout({ children, userId, initialUsername, initialRole }: AppLayoutProps) {
+    const { isImpersonating, impersonatedUser } = useAdminImpersonation();
     const [currentUsername, setCurrentUsername] = useState(initialUsername);
     const [isActivityOpen, setIsActivityOpen] = useState(true);
 
+    // Use impersonated username if impersonation is active, otherwise use original username
+    const displayUsername = isImpersonating ? impersonatedUser?.username : currentUsername;
+
     const handleUsernameUpdate = (username: string) => {
-        setCurrentUsername(username);
+        if (!isImpersonating) {
+            setCurrentUsername(username);
+        }
     };
 
     const layoutContent = (
         <div className="min-h-screen flex transition-colors duration-300" style={{ backgroundColor: 'var(--color-background)' }}>
             {/* Left Sidebar Navigation */}
-            <SidebarNav userRole={initialRole} />
+            <SidebarNav userRole={initialRole} currentUsername={displayUsername} />
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col min-w-0">
@@ -37,7 +44,7 @@ export default function AppLayout({ children, userId, initialUsername, initialRo
 
                 <OnlineUsersBanner
                     userId={userId}
-                    currentUsername={currentUsername}
+                    currentUsername={displayUsername}
                 />
             </div>
 
@@ -76,7 +83,7 @@ export default function AppLayout({ children, userId, initialUsername, initialRo
         return (
             <ProfileChecker
                 userId={userId}
-                currentUsername={currentUsername}
+                currentUsername={displayUsername}
                 onUsernameUpdate={handleUsernameUpdate}
             >
                 {layoutContent}

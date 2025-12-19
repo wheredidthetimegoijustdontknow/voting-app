@@ -36,7 +36,7 @@ export async function createBots(count: number = 5): Promise<{ created: number; 
     const { count: existingProfileCount } = await supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true })
-        .ilike('username', 'SimBot %');
+        .ilike('username', 'SimBot_%');
 
     let nextIndex = (existingProfileCount || 0) + 1;
 
@@ -45,19 +45,42 @@ export async function createBots(count: number = 5): Promise<{ created: number; 
         const email = `sim_bot_${botId}@example.com`;
 
         try {
-            // Updated: Simple creation. The DB Trigger (handle_new_user) now handles Profile creation + Email.
+            // Create auth user first
             const { data: { user }, error: createError } = await supabase.auth.admin.createUser({
                 email,
                 password: 'password123',
                 email_confirm: true,
                 user_metadata: {
-                    username: `SimBot ${botId}`,
+                    username: `SimBot_${botId}`,
                     is_sim_bot: true
                 }
             });
 
-            if (createError) throw createError;
-            if (user) created++;
+            if (createError) {
+                console.error(`Failed to create auth user for ${email}:`, createError.message);
+                throw createError;
+            }
+            
+            if (!user) {
+                throw new Error(`No user returned for ${email}`);
+            }
+            
+            // Verify profile was created by the trigger
+            const { data: profile, error: profileError } = await supabase
+                .from('profiles')
+                .select('id, username')
+                .eq('id', user.id)
+                .single();
+                
+            if (profileError || !profile) {
+                console.error(`Profile not created for user ${user.id}:`, profileError);
+                // Clean up auth user if profile creation failed
+                await supabase.auth.admin.deleteUser(user.id);
+                throw new Error(`Profile creation failed for ${email}`);
+            }
+            
+            console.log(`Successfully created bot: ${profile.username} (${user.id})`);
+            created++;
 
         } catch (err: any) {
             console.error(`Failed to create ${email}:`, err.message);
@@ -74,11 +97,11 @@ export async function deleteBots(count: number = 5): Promise<{ deleted: number; 
     const errors = [];
 
     // Get the most recent bots
-    // We can identify them by username pattern 'SimBot %'
+    // We can identify them by username pattern 'SimBot_%'
     const { data: bots, error } = await supabase
         .from('profiles')
         .select('id, username')
-        .ilike('username', 'SimBot %')
+        .ilike('username', 'SimBot_%')
         .order('created_at', { ascending: false })
         .limit(count);
 
@@ -124,7 +147,7 @@ export async function listBots(): Promise<BotUser[]> {
     const { data: profiles, error } = await supabase
         .from('profiles')
         .select('id, username, created_at, email')
-        .ilike('username', 'SimBot %')
+        .ilike('username', 'SimBot_%')
         .order('created_at', { ascending: false });
 
     if (error) {

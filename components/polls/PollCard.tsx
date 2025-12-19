@@ -328,7 +328,7 @@ function PollCard({ poll, isSignedIn, onVoteSuccess, currentUserId, userRole }: 
                             <VoteButton
                               pollId={poll.id}
                               choice={result.choice}
-                              isSelected={false}
+                              isSelected={poll.user_vote_choice === result.choice}
                               onVoteSuccess={onVoteSuccess}
                             />
                           )}
