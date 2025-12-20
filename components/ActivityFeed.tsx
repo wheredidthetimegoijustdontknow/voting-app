@@ -233,7 +233,6 @@ export default function ActivityFeed() {
                                         className="font-bold px-1.5 py-0.5 rounded-md inline-block"
                                         style={{
                                             color: 'var(--activity-color)',
-                                            backgroundColor: 'var(--activity-soft)',
                                             marginLeft: '4px',
                                             marginRight: '4px'
                                         }}

@@ -2,7 +2,7 @@
 // Dynamic route showing user profile with aura colors, bio, and archetype
 
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { getUserArchetype } from '@/lib/utils/archetypes';
+// import { getUserArchetype } from '@/lib/utils/archetypes'; // Commented out unused import
 import { ArchetypeBadge } from '@/components/profile/ArchetypeBadge';
 import { ProfileEditModal } from '@/components/profile/ProfileEditModal';
 import { ProfilePageWrapper } from '@/components/profile/ProfilePageWrapper';
@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { ArrowLeft, Calendar, User, Trophy } from 'lucide-react';
 import { getCurrentProfile } from '@/app/actions/profile';
 import { EditProfileButton } from '@/components/profile/EditProfileButton';
+import { headers } from 'next/headers';
 
 interface ProfilePageProps {
   params: {
@@ -28,6 +29,13 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   
   const supabase = await createServerSupabaseClient();
   const currentProfile = await getCurrentProfile();
+
+  // Check referrer to determine back button behavior
+  const hdrs = await headers();
+  const referrer = hdrs.get('referer') || '';
+  const isFromUsers = referrer.includes('/users');
+  const backHref = isFromUsers ? '/users' : '/';
+  const backText = isFromUsers ? 'Back to Users' : 'Back to Polls';
 
   // Fetch user profile by username (case-insensitive)
   const { data: profile, error } = await supabase
@@ -96,11 +104,11 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         {/* Back Navigation */}
         <div className="absolute top-6 left-6 z-10">
           <Link 
-            href="/" 
+            href={backHref}
             className="inline-flex items-center gap-2 px-4 py-2 bg-white/90 dark:bg-zinc-800/90 rounded-full text-zinc-700 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-800 transition-colors backdrop-blur-sm border border-white/20"
           >
             <ArrowLeft size={16} />
-            <span className="text-sm font-medium">Back to Polls</span>
+            <span className="text-sm font-medium">{backText}</span>
           </Link>
         </div>
 

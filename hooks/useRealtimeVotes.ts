@@ -136,8 +136,13 @@ export function useRealtimeVotes({ initialPolls, userId }: UseRealtimeVotesOptio
 
   // Enhanced initial fetch with better error handling
   const fetchInitialPolls = useCallback(async () => {
-    if (isInitialized.current) return;
+    console.log('🔄 [useRealtimeVotes] fetchInitialPolls called, isInitialized:', isInitialized.current);
+    if (isInitialized.current) {
+      console.log('⚠️ [useRealtimeVotes] Already initialized, skipping fetch');
+      return;
+    }
     isInitialized.current = true;
+    console.log('🔄 [useRealtimeVotes] Starting initial fetch...');
 
     try {
       // Add timeout to prevent hanging
@@ -260,9 +265,25 @@ export function useRealtimeVotes({ initialPolls, userId }: UseRealtimeVotesOptio
         { event: 'INSERT', schema: 'public', table: 'votes' },
         (payload) => {
           console.log('🗳️ New vote detected:', payload.new);
+          console.log('🔍 [useRealtimeVotes] Vote payload details:', {
+            new: payload.new,
+            old: payload.old,
+            eventType: payload.eventType,
+            schema: payload.schema,
+            table: payload.table,
+            pollId: payload.new?.poll_id,
+            userId: payload.new?.user_id,
+            choice: payload.new?.choice,
+            timestamp: new Date().toISOString()
+          });
           setConnectionError(null); // Clear any previous errors
           const pollId = payload.new?.poll_id;
-          if (pollId) updatePollWithVotes(pollId);
+          if (pollId) {
+            console.log('🔄 [useRealtimeVotes] Triggering poll update for:', pollId);
+            updatePollWithVotes(pollId);
+          } else {
+            console.warn('⚠️ [useRealtimeVotes] No poll_id in vote payload');
+          }
         }
       )
       .on('postgres_changes',
@@ -366,12 +387,14 @@ export function useRealtimeVotes({ initialPolls, userId }: UseRealtimeVotesOptio
 
   // Enhanced manual refresh function
   const refresh = useCallback(async () => {
-    console.log('Manual refresh triggered');
+    console.log('🔄 [useRealtimeVotes] Manual refresh triggered at:', new Date().toISOString());
     setConnectionError(null);
 
     // Reset initialization to force fresh data fetch
     isInitialized.current = false;
+    console.log('🔄 [useRealtimeVotes] Reset initialization flag, calling fetchInitialPolls...');
     await fetchInitialPolls();
+    console.log('🔄 [useRealtimeVotes] Refresh completed');
   }, [fetchInitialPolls]);
 
   return {

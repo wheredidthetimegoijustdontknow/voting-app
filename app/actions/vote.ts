@@ -17,7 +17,7 @@ const VoteSchema = z.object({
   choice: z.string().min(1, { message: "Choice cannot be empty." }),
   
   // Optional impersonation info
-  impersonated_user_id: z.string().uuid().optional(),
+  impersonated_user_id: z.string().uuid().nullable().optional(),
 });
 
 // Define the expected return shape for the client
@@ -35,20 +35,31 @@ interface ActionResponse {
  * @param formData - The form data passed from the client form submission.
  */
 export async function submitVote(formData: FormData): Promise<ActionResponse> {
+  console.log('🔍 [submitVote] === SERVER ACTION STARTED ===');
+  console.log('🔍 [submitVote] Raw FormData received:', {
+    poll_id: formData.get('poll_id'),
+    choice: formData.get('choice'),
+    impersonated_user_id: formData.get('impersonated_user_id'),
+    timestamp: new Date().toISOString()
+  });
+  
   // 2. Extract and transform FormData to a plain object
   const rawData = {
     poll_id: formData.get('poll_id'),
     choice: formData.get('choice'),
     impersonated_user_id: formData.get('impersonated_user_id'),
   };
+  
+  console.log('🔍 [submitVote] Extracted rawData:', rawData);
 
   // --- 3. Server-side Validation with Zod ---
+  console.log('🔍 [submitVote] Starting Zod validation...');
   const validationResult = VoteSchema.safeParse(rawData);
 
   if (!validationResult.success) {
     // If validation fails, return a client-friendly error message
     const validationError = validationResult.error.issues[0].message;
-    console.error('Zod validation failed:', validationResult.error.issues);
+    console.error('❌ [submitVote] Zod validation failed:', validationResult.error.issues);
     return {
       success: false,
       error: `Input validation failed: ${validationError}`,
@@ -58,19 +69,31 @@ export async function submitVote(formData: FormData): Promise<ActionResponse> {
 
   // Validated data is now type-safe and ready for the database
   const validatedData = validationResult.data;
+  console.log('✅ [submitVote] Zod validation passed:', validatedData);
 
   try {
     const supabase = await createServerSupabaseClient();
+    console.log('🔍 [submitVote] Supabase client created');
 
     // Check if the user is authenticated (Optional, but good practice for double-check)
     const { data: { user } } = await supabase.auth.getUser();
+    console.log('🔍 [submitVote] Current authenticated user:', user?.id);
+    
     if (!user) {
+      console.error('❌ [submitVote] No authenticated user found');
       // RLS should catch this, but checking explicitly provides a better error message.
       return { success: false, error: 'Authentication required to submit a vote.', data: null };
     }
 
     // 4. Check if user has already voted on this poll
     const userIdToUse = validatedData.impersonated_user_id || user.id;
+    console.log('🔍 [submitVote] Determining user ID to use:', {
+      currentUserId: user.id,
+      impersonatedUserId: validatedData.impersonated_user_id,
+      finalUserId: userIdToUse,
+      isImpersonating: !!validatedData.impersonated_user_id
+    });
+    
     const { data: existingVote } = await supabase
       .from('votes')
       .select('id')
@@ -78,11 +101,20 @@ export async function submitVote(formData: FormData): Promise<ActionResponse> {
       .eq('user_id', userIdToUse)
       .single();
       
+    console.log('🔍 [submitVote] Existing vote check result:', existingVote);
+      
     if (existingVote) {
+      console.error('❌ [submitVote] User has already voted on this poll');
       return { success: false, error: 'You have already voted on this poll.', data: null };
     }
     
     // 5. Insert the validated vote row
+    console.log('🔍 [submitVote] Inserting vote into database...', {
+      poll_id: validatedData.poll_id,
+      choice: validatedData.choice,
+      user_id: userIdToUse
+    });
+    
     const { error } = await supabase.from('votes').insert([
       {
         poll_id: validatedData.poll_id,
@@ -92,18 +124,27 @@ export async function submitVote(formData: FormData): Promise<ActionResponse> {
     ]);
 
     if (error) {
-      console.error('Supabase vote error:', error);
+      console.error('❌ [submitVote] Supabase vote error:', error);
       // RLS failure (e.g., trying to vote twice if RLS is configured that way) 
       // or a foreign key error will be caught here.
       return { success: false, error: `Database error: ${error.message}`, data: null };
     }
 
+    console.log('✅ [submitVote] Vote inserted successfully!');
+    
     // 5. Success and cache revalidation
+    console.log('🔍 [submitVote] Revalidating path:', `/poll/${validatedData.poll_id}`);
     revalidatePath(`/poll/${validatedData.poll_id}`);
+    console.log('✅ [submitVote] === SERVER ACTION COMPLETED SUCCESSFULLY ===');
     return { success: true, error: null };
 
   } catch (e) {
-    console.error('General Server Action error:', e);
+    console.error('💥 [submitVote] General Server Action error:', e);
+    console.error('💥 [submitVote] Error details:', {
+      name: e instanceof Error ? e.name : 'Unknown',
+      message: e instanceof Error ? e.message : String(e),
+      stack: e instanceof Error ? e.stack : undefined
+    });
     return { success: false, error: 'An unexpected server error occurred.', data: null };
   }
 }

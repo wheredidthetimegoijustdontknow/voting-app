@@ -25,6 +25,7 @@ export function SidebarNav({ userRole, currentUsername }: SidebarNavProps) {
     const navItems = [
         { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
         { name: 'Public Polls', href: '/', icon: ListFilter },
+        { name: 'Users', href: '/users', icon: Users },
         ...(currentUsername ? [{ name: 'My Profile', href: `/profile/${currentUsername}`, icon: User }] : []),
     ];
 
@@ -55,12 +56,12 @@ export function SidebarNav({ userRole, currentUsername }: SidebarNavProps) {
             onMouseLeave={() => setIsHovered(false)}
         >
             {/* Header */}
-            <div className="p-4 flex items-center justify-between" style={{ minHeight: '72px' }}>
+            <div className="p-4 flex items-center justify-between" style={{ minHeight: '50px' }}>
                 <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity overflow-hidden">
                     <img
                         src="/Polls_on_Parade_logo_transparent.PNG"
-                        alt="Polls On Parade Logo"
-                        className="w-10 h-10 rounded-xl shrink-0"
+                        alt="Polls On Parade Banner"
+                        className="w-225 h-50 shrink-0"
                     />
                     {isExpanded && (
                         <span

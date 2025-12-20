@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { SidebarNav } from './layout/SidebarNav';
 import OnlineUsersBanner from './OnlineUsersBanner';
 import ProfileChecker from './ProfileChecker';
@@ -19,6 +20,12 @@ export default function AppLayout({ children, userId, initialUsername, initialRo
     const { isImpersonating, impersonatedUser } = useAdminImpersonation();
     const [currentUsername, setCurrentUsername] = useState(initialUsername);
     const [isActivityOpen, setIsActivityOpen] = useState(true);
+    const pathname = usePathname();
+    
+    // Check if we're on users or profile pages
+    const isUsersPage = pathname === '/users';
+    const isProfilePage = pathname.startsWith('/profile/');
+    const shouldShowActivityFeed = userId && !isUsersPage && !isProfilePage;
 
     // Use impersonated username if impersonation is active, otherwise use original username
     const displayUsername = isImpersonating ? impersonatedUser?.username : currentUsername;
@@ -48,8 +55,8 @@ export default function AppLayout({ children, userId, initialUsername, initialRo
                 />
             </div>
 
-            {/* Right Sidebar - Activity Feed (Collapsible) - Only for authenticated users */}
-            {userId && (
+            {/* Right Sidebar - Activity Feed (Collapsible) - Only for authenticated users and not on users/profile pages */}
+            {shouldShowActivityFeed && (
                 <aside
                     className={`hidden lg:flex flex-col border-l transition-all duration-300 ease-in-out relative ${isActivityOpen ? 'w-80' : 'w-12'}`}
                     style={{

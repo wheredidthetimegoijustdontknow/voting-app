@@ -146,16 +146,39 @@ export default function AdminHUD() {
                 </div>
                 <div className="flex items-center gap-1">
                     {!isMinimized && (
-                        <div className="flex bg-zinc-100 dark:bg-zinc-800 p-0.5 rounded-lg mr-2">
+                        <div 
+                            className="flex p-0.5 rounded-lg mr-2"
+                            style={{
+                                backgroundColor: 'var(--color-interactive-hover)',
+                            }}
+                        >
                             <button
                                 onClick={() => setActiveTab('simulation')}
-                                className={`px-2 py-1 text-[9px] font-bold rounded-md transition-all ${activeTab === 'simulation' ? 'bg-white dark:bg-zinc-700 shadow-sm text-primary' : 'text-zinc-500'}`}
+                                className="px-2 py-1 text-[9px] font-bold rounded-md transition-all"
+                                style={{
+                                    ...(activeTab === 'simulation' ? {
+                                        backgroundColor: 'var(--color-surface)',
+                                        color: 'var(--color-primary)',
+                                        boxShadow: 'var(--shadow-sm)',
+                                    } : {
+                                        color: 'var(--color-text-secondary)',
+                                    })
+                                }}
                             >
                                 SIM
                             </button>
                             <button
                                 onClick={() => setActiveTab('moderation')}
-                                className={`px-2 py-1 text-[9px] font-bold rounded-md transition-all ${activeTab === 'moderation' ? 'bg-white dark:bg-zinc-700 shadow-sm text-red-500' : 'text-zinc-500'}`}
+                                className="px-2 py-1 text-[9px] font-bold rounded-md transition-all"
+                                style={{
+                                    ...(activeTab === 'moderation' ? {
+                                        backgroundColor: 'var(--color-surface)',
+                                        color: 'var(--color-error)',
+                                        boxShadow: 'var(--shadow-sm)',
+                                    } : {
+                                        color: 'var(--color-text-muted)',
+                                    })
+                                }}
                             >
                                 MOD
                             </button>
@@ -163,7 +186,7 @@ export default function AdminHUD() {
                     )}
                     <button
                         onClick={() => setIsMinimized(!isMinimized)}
-                        className="p-1 hover:bg-background rounded transition-colors"
+                        className="p-1 hover:bg-background rounded transition-colors text-blue-500"
                     >
                         {isMinimized ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                     </button>

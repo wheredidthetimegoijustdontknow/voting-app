@@ -18,6 +18,7 @@ import { CountdownTimer } from './CountdownTimer';
 import EmojiPicker from '../ui/EmojiPicker';
 import { updatePoll } from '@/app/actions/poll';
 import { useToast } from '../ui/ToastContext';
+import { useAdminImpersonation } from '@/contexts/AdminImpersonationContext';
 
 interface PollCardProps {
   poll: PollWithResults;
@@ -31,6 +32,13 @@ function PollCard({ poll, isSignedIn, onVoteSuccess, currentUserId, userRole }: 
   const isCreator = currentUserId === poll.user_id;
   const isAdmin = userRole === 'admin';
   const canEditIcon = isCreator || isAdmin;
+  
+  // Admin impersonation context
+  const { isImpersonating, impersonatedUser } = useAdminImpersonation();
+  
+  // Track impersonated user's vote status
+  const [impersonatedUserVoted, setImpersonatedUserVoted] = useState(false);
+  const [impersonatedUserVoteChoice, setImpersonatedUserVoteChoice] = useState('');
 
   const [showChart, setShowChart] = useState(false);
   const [isGlowing, setIsGlowing] = useState(false);
@@ -51,16 +59,39 @@ function PollCard({ poll, isSignedIn, onVoteSuccess, currentUserId, userRole }: 
   const isEnded = poll.status === 'ENDED';
   const isCapped = poll.status === 'REVIEW' || poll.status === 'REMOVED' || poll.status === 'ENDED';
 
-  const canVote = isActive && isSignedIn && !poll.user_has_voted;
-  const canChangeVote = isActive && poll.user_has_voted;
+  // Determine the effective user ID for voting checks
+  const effectiveUserId = isImpersonating ? impersonatedUser?.id : currentUserId;
+  
+  // Check if the current user (or impersonated user) has already voted on this poll
+  // When impersonating, we need to check if the impersonated user has voted
+  let hasUserVoted = false;
+  let userVoteChoice = '';
+  
+  if (isImpersonating && impersonatedUser) {
+    // When impersonating, use our tracked state for the impersonated user
+    hasUserVoted = impersonatedUserVoted;
+    userVoteChoice = impersonatedUserVoteChoice;
+    console.log('🎭 [PollCard] Impersonating user:', impersonatedUser.username, 'voted:', hasUserVoted, 'choice:', userVoteChoice);
+  } else {
+    // Normal voting - use poll data for current user
+    hasUserVoted = poll.user_has_voted;
+    userVoteChoice = poll.user_vote_choice || '';
+  }
+  
+  const canVote = isActive && isSignedIn && !hasUserVoted;
+  const canChangeVote = isActive && hasUserVoted;
 
   const handleRetractVote = () => {
     setIsRetractModalOpen(true);
   };
 
   const handleRetractSuccess = () => {
+    console.log('🔄 [PollCard] Retract vote success, refreshing...');
     router.refresh();
-    if (onVoteSuccess) onVoteSuccess();
+    if (onVoteSuccess) {
+      console.log('🔄 [PollCard] Calling onVoteSuccess callback from retract');
+      onVoteSuccess();
+    }
   };
 
   const handleIconSelect = async (emoji: string) => {
@@ -84,6 +115,13 @@ function PollCard({ poll, isSignedIn, onVoteSuccess, currentUserId, userRole }: 
 
   useEffect(() => {
     if (poll.total_votes > prevVotesRef.current) {
+      console.log('✨ [PollCard] Vote count increased:', {
+        previous: prevVotesRef.current,
+        current: poll.total_votes,
+        pollId: poll.id,
+        isImpersonating,
+        impersonatedUser: impersonatedUser?.username
+      });
       // Use setTimeout to avoid synchronous setState inside useEffect warning
       const glowTimer = setTimeout(() => setIsGlowing(true), 0);
       const resetTimer = setTimeout(() => setIsGlowing(false), 1500);
@@ -94,7 +132,50 @@ function PollCard({ poll, isSignedIn, onVoteSuccess, currentUserId, userRole }: 
       };
     }
     prevVotesRef.current = poll.total_votes;
-  }, [poll.total_votes]);
+  }, [poll.total_votes, isImpersonating, impersonatedUser]);
+  
+  // Reset impersonated user state when impersonation changes
+  useEffect(() => {
+    if (!isImpersonating || !impersonatedUser) {
+      console.log('🔄 [PollCard] Resetting impersonated user state');
+      setImpersonatedUserVoted(false);
+      setImpersonatedUserVoteChoice('');
+    }
+  }, [isImpersonating, impersonatedUser]);
+
+  // Listen for vote changes and update impersonated user state
+  useEffect(() => {
+    if (isImpersonating && impersonatedUser && poll.total_votes > prevVotesRef.current) {
+      console.log('✨ [PollCard] Vote count increased while impersonating, checking if impersonated user voted...');
+      
+      // Check if the vote count increase suggests the impersonated user just voted
+      // This is a heuristic - in a real app you'd want more precise tracking
+      const voteIncrease = poll.total_votes - prevVotesRef.current;
+      if (voteIncrease > 0) {
+        console.log('🎭 [PollCard] Assuming impersonated user voted, updating state...');
+        setImpersonatedUserVoted(true);
+        // We don't know the exact choice from this context, but the UI will update with real data on refresh
+      }
+    }
+    prevVotesRef.current = poll.total_votes;
+  }, [poll.total_votes, isImpersonating, impersonatedUser]);
+
+  // Debug logging for poll state changes
+  useEffect(() => {
+    console.log('🔄 [PollCard] Poll state updated:', {
+      pollId: poll.id,
+      user_has_voted: hasUserVoted,
+      user_vote_choice: userVoteChoice,
+      total_votes: poll.total_votes,
+      isImpersonating,
+      impersonatedUser: impersonatedUser?.username,
+      canVote,
+      canChangeVote,
+      effectiveUserId,
+      impersonatedUserVoted,
+      impersonatedUserVoteChoice
+    });
+  }, [hasUserVoted, userVoteChoice, poll.total_votes, isImpersonating, impersonatedUser, canVote, canChangeVote, effectiveUserId, impersonatedUserVoted, impersonatedUserVoteChoice]);
 
   return (
     <>
@@ -106,50 +187,55 @@ function PollCard({ poll, isSignedIn, onVoteSuccess, currentUserId, userRole }: 
           '--poll-glow': isCapped ? 'transparent' : `var(--color-poll-${poll.color_theme_id || 1}-glow)`,
           borderColor: 'var(--poll-color)',
           borderWidth: '1.5px',
+          display: 'flex',
+          alignItems: 'stretch'
         } as React.CSSProperties}
       >
         <div className="flex-1 flex items-stretch overflow-hidden rounded-[calc(var(--radius-lg)-1px)]">
           {/* Accent Column */}
           <div
-            className="w-16 shrink-0 flex flex-col items-center border-r transition-colors duration-300 relative z-20 min-h-[240px]"
+            className="w-16 shrink-0 flex flex-col border-r transition-colors duration-300 relative z-20"
             style={{
               backgroundColor: 'var(--poll-soft)',
-              borderColor: 'var(--poll-soft)'
+              borderColor: 'var(--poll-soft)',
+              minHeight: '100%'
             }}
           >
-            {/* Brand Logo at Top - Redesigned sectioned-off tile */}
-            <button
-              onClick={() => canEditIcon && setIsEmojiPickerOpen(true)}
-              disabled={!canEditIcon || isUpdatingIcon}
-              className={`w-10 h-10 shrink-0 flex items-center justify-center text-xl mt-3 mb-5 transition-all duration-300 ${canEditIcon ? 'hover:scale-105 active:scale-95 cursor-pointer' : 'cursor-default'}`}
-              style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.7)',
-                border: '2px solid rgba(255, 255, 255, 0.2)',
-                color: '#FFFFFF',
-                borderRadius: 'var(--radius-md)', // Conforming more closely to internal elements
-                opacity: isUpdatingIcon ? 0.7 : 1,
-              }}
-              onMouseEnter={(e) => {
-                if (canEditIcon) {
-                  e.currentTarget.style.border = '2px solid transparent';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (canEditIcon) {
-                  e.currentTarget.style.border = '2px solid rgba(255, 255, 255, 0.4)';
-                }
-              }}
-              title={canEditIcon ? "Change Poll Icon" : undefined}
-            >
-              {isUpdatingIcon ? (
-                <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <span className="drop-shadow-sm">{poll.icon || 'ðŸ“Š'}</span>
-              )}
-            </button>
+            {/* Emoji Icon - Pinned to Top */}
+            <div className="flex items-center justify-center pt-3">
+              <button
+                onClick={() => canEditIcon && setIsEmojiPickerOpen(true)}
+                disabled={!canEditIcon || isUpdatingIcon}
+                className={`w-10 h-10 shrink-0 flex items-center justify-center text-xl transition-all duration-300 ${canEditIcon ? 'hover:scale-105 active:scale-95 cursor-pointer' : 'cursor-default'}`}
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                  border: '2px solid rgba(255, 255, 255, 0.2)',
+                  color: '#FFFFFF',
+                  borderRadius: 'var(--radius-md)', 
+                  opacity: isUpdatingIcon ? 0.7 : 1,
+                }}
+                onMouseEnter={(e) => {
+                  if (canEditIcon) {
+                    e.currentTarget.style.border = '2px solid transparent';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (canEditIcon) {
+                    e.currentTarget.style.border = '2px solid rgba(255, 255, 255, 0.4)';
+                  }
+                }}
+                title={canEditIcon ? "Change Poll Icon" : undefined}
+              >
+                {isUpdatingIcon ? (
+                  <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <span className="drop-shadow-sm">{poll.icon || '📊'}</span>
+                )}
+              </button>
+            </div>
 
-            {/* Action Buttons at Bottom */}
-            <div className="flex flex-col gap-2 mt-auto pb-6">
+            {/* Action Buttons - Pinned to Bottom */}
+            <div className="flex flex-col gap-2 px-0 pb-4 items-center mt-auto">
               {/* Analytics Toggle - Always visible */}
               <button
                 onClick={() => {
@@ -203,12 +289,14 @@ function PollCard({ poll, isSignedIn, onVoteSuccess, currentUserId, userRole }: 
           </div>
 
           {/* Divider Toggle Column (Clickable Strip) */}
-          <div
-            className="w-[3px] shrink-0 border-r flex flex-col items-center justify-center relative cursor-pointer bg-zinc-900 dark:bg-zinc-400 hover:bg-zinc-700 dark:hover:bg-zinc-300 group/divider transition-colors z-30"
+          {/* <div
+            className="w-[3px] shrink-0 border-r flex flex-col items-center justify-center relative cursor-pointer hover:bg-zinc-700 dark:hover:bg-zinc-300 group/divider transition-colors z-30"
             onClick={() => setIsCollapsed(!isCollapsed)}
-            style={{ borderColor: 'var(--color-border-default)' }}
+            style={{ 
+              color: 'var(--poll-color)'
+            }}
             title={isCollapsed ? "Expand Details" : "Collapse Details"}
-          />
+          /> */}
 
           {!isCollapsed && (
             <div className="flex-1 p-6 space-y-4 animate-in fade-in slide-in-from-left-2 duration-300">
@@ -255,8 +343,15 @@ function PollCard({ poll, isSignedIn, onVoteSuccess, currentUserId, userRole }: 
                 </div>
               </div>
 
+              {/* Sign in prompt for non-authenticated users */}
+              {!isSignedIn && !hasUserVoted && !isCollapsed && (
+                <div className="mx-0 p-2 bg-red-600 dark:bg-red-600 backdrop-blur-sm border border-red-600 text-center text-xs font-bold uppercase tracking-widest text-white rounded-lg">
+                  {isImpersonating ? 'Impersonating - Vote as @' + impersonatedUser?.username : 'Sign in to participate'}
+                </div>
+              )}
+
               {/* User Voted Badge */}
-              {poll.user_has_voted && (
+              {hasUserVoted && (
                 <div className="flex items-center gap-2">
                   <div
                     className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium"
@@ -266,8 +361,14 @@ function PollCard({ poll, isSignedIn, onVoteSuccess, currentUserId, userRole }: 
                       color: 'var(--color-success)',
                     }}
                   >
-                    <span className="flex items-center justify-center w-4 h-4 rounded-full bg-success text-white text-[10px]">âœ“</span>
-                    <span>You voted: <span className="font-bold">"{poll.user_vote_choice}"</span></span>
+                    <span className="flex items-center justify-center w-4 h-4 rounded-full bg-success text-white text-[10px]">✓</span>
+                    <span>
+                      {isImpersonating ? (
+                        <>@{impersonatedUser?.username} voted: <span className="font-bold">"{userVoteChoice}"</span></>
+                      ) : (
+                        <>You voted: <span className="font-bold">"{userVoteChoice}"</span></>
+                      )}
+                    </span>
                   </div>
 
                   <button
@@ -292,7 +393,7 @@ function PollCard({ poll, isSignedIn, onVoteSuccess, currentUserId, userRole }: 
                   <PollResultsChart results={poll.results} color="var(--poll-color)" />
                 ) : (
                   poll.results.map((result) => {
-                    const isUserChoice = poll.user_vote_choice === result.choice;
+                    const isUserChoice = userVoteChoice === result.choice;
 
                     return (
                       <div key={result.choice} className="group/item relative">
@@ -328,12 +429,28 @@ function PollCard({ poll, isSignedIn, onVoteSuccess, currentUserId, userRole }: 
                             <VoteButton
                               pollId={poll.id}
                               choice={result.choice}
-                              isSelected={poll.user_vote_choice === result.choice}
-                              onVoteSuccess={onVoteSuccess}
+                              isSelected={userVoteChoice === result.choice}
+                              onVoteSuccess={() => {
+                                console.log('🔄 [PollCard] VoteButton onVoteSuccess called for poll:', poll.id, 'choice:', result.choice);
+                                
+                                // If impersonating, update our local state to show the vote
+                                if (isImpersonating && impersonatedUser) {
+                                  console.log('🎭 [PollCard] Updating impersonated user vote state:', result.choice);
+                                  setImpersonatedUserVoted(true);
+                                  setImpersonatedUserVoteChoice(result.choice);
+                                }
+                                
+                                if (onVoteSuccess) {
+                                  console.log('🔄 [PollCard] Calling parent onVoteSuccess');
+                                  onVoteSuccess();
+                                } else {
+                                  console.log('⚠️ [PollCard] No onVoteSuccess callback provided');
+                                }
+                              }}
                             />
                           )}
 
-                          {!isActive && !poll.user_has_voted && (
+                          {!isActive && !hasUserVoted && (
                             <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-tighter">
                               Locked
                             </div>
@@ -356,22 +473,14 @@ function PollCard({ poll, isSignedIn, onVoteSuccess, currentUserId, userRole }: 
             backgroundColor: 'var(--color-surface)',
             borderColor: isCollapsed ? 'var(--poll-color)' : 'var(--color-border-strong)',
             color: 'var(--poll-color)',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+            boxShadow: '0 4px 12px rgba(0,0,0,0.4)'
           }}
           title={isCollapsed ? "Expand Details" : "Collapse Details"}
         >
           {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
         </button>
 
-        {/* Sign in prompt for non-authenticated users */}
-        {!isSignedIn && !poll.user_has_voted && !isCollapsed && (
-          <div
-            className="absolute bottom-0 left-16 right-0 p-2 bg-zinc-50/80 dark:bg-zinc-900/80 backdrop-blur-sm border-t text-center text-[10px] font-bold uppercase tracking-widest"
-            style={{ borderColor: 'var(--color-border-light)', color: 'var(--color-text-muted)' }}
-          >
-            Sign in to participate
-          </div>
-        )}
+
       </div>
 
       <RetractVoteModal

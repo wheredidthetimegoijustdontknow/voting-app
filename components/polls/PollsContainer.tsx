@@ -118,7 +118,10 @@ export default function PollingPollList({ initialPolls, userId, userRole }: Poll
               key={poll.id}
               poll={poll}
               isSignedIn={!!userId}
-              onVoteSuccess={refresh}
+              onVoteSuccess={() => {
+                console.log('🔄 [PollsContainer] PollCard onVoteSuccess called, triggering refresh...');
+                refresh();
+              }}
               currentUserId={userId}
               userRole={userRole}
             />

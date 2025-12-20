@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAdminImpersonation } from '@/contexts/AdminImpersonationContext';
 
@@ -12,19 +12,22 @@ interface ProfilePageWrapperProps {
 export function ProfilePageWrapper({ children, username }: ProfilePageWrapperProps) {
   const { isImpersonating, impersonatedUser } = useAdminImpersonation();
   const router = useRouter();
+  const [hasChecked, setHasChecked] = useState(false);
 
   // Normalize username for consistent comparison
   const normalizedUsername = username.toLowerCase();
   const normalizedImpersonatedUsername = impersonatedUser?.username?.toLowerCase();
 
   useEffect(() => {
-    // If impersonating and the current username doesn't match the impersonated user,
-    // redirect to the impersonated user's profile
-    if (isImpersonating && impersonatedUser && normalizedUsername !== normalizedImpersonatedUsername) {
+    // Only run the redirect check once per mount to prevent loops
+    if (!hasChecked && isImpersonating && impersonatedUser && normalizedUsername !== normalizedImpersonatedUsername) {
       console.log(`ProfilePageWrapper: Redirecting from ${username} to ${impersonatedUser.username} due to impersonation`);
+      setHasChecked(true);
       router.replace(`/profile/${impersonatedUser.username}`);
+    } else if (!hasChecked) {
+      setHasChecked(true);
     }
-  }, [isImpersonating, impersonatedUser, normalizedUsername, normalizedImpersonatedUsername, router]);
+  }, [hasChecked, isImpersonating, impersonatedUser, normalizedUsername, normalizedImpersonatedUsername, router, username]);
 
   // If we're impersonating and viewing the impersonated user's profile,
   // show a banner indicating this is impersonation mode

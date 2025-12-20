@@ -385,14 +385,14 @@ html {
 
 body {
   background: var(--color-background);
-  color: var(--color-text-primary);
+  /* color: var(--color-text-primary); */  /* Commented out to prevent global text override */
   font-family: var(--font-family-sans);
   line-height: 1.5;
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* Typography Classes */
-.text-heading-xl {
+/* .text-heading-xl {
   font-size: var(--font-size-5xl, 28px);
   font-weight: 600;
   line-height: 1.4;
@@ -439,7 +439,7 @@ body {
   font-weight: 400;
   line-height: 1.5;
   color: var(--color-text-muted);
-}
+} */
 
 /* Component Base Classes */
 .card {
@@ -578,17 +578,17 @@ body {
   background: var(--color-background);
 }
 
-.text-primary {
+/* .text-primary {
   color: var(--color-text-primary);
-}
+} */
 
-.text-secondary {
+/* .text-secondary {
   color: var(--color-text-secondary);
-}
+} */
 
-.text-muted {
+/* .text-muted {
   color: var(--color-text-muted);
-}
+} */
 
 .border-default {
   border-color: var(--color-border-default);

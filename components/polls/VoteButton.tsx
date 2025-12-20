@@ -26,7 +26,18 @@ export default function VoteButton({
 
   const handleVote = async () => {
     // Prevent double voting
-    if (isVoting || optimisticVoted || isSelected) return;
+    if (isVoting || optimisticVoted || isSelected) {
+      console.log('🚫 Vote blocked - already voting/selected:', { isVoting, optimisticVoted, isSelected });
+      return;
+    }
+    
+    console.log('🗳️ [VoteButton] Starting vote process...', {
+      pollId,
+      choice,
+      isImpersonating,
+      impersonatedUser: impersonatedUser?.id,
+      currentTimestamp: new Date().toISOString()
+    });
     
     setIsVoting(true);
     setError(null);
@@ -40,29 +51,49 @@ export default function VoteButton({
       
       // If impersonating, include the impersonated user's ID
       if (isImpersonating && impersonatedUser) {
+        console.log('🎭 [VoteButton] Adding impersonated_user_id:', impersonatedUser.id);
         formData.append('impersonated_user_id', impersonatedUser.id);
+      } else {
+        console.log('👤 [VoteButton] No impersonation - using current user');
       }
+
+      console.log('📤 [VoteButton] Submitting vote to server...', {
+        poll_id: formData.get('poll_id'),
+        choice: formData.get('choice'),
+        impersonated_user_id: formData.get('impersonated_user_id') || 'none'
+      });
 
       // Call the Server Action directly
       const result = await submitVote(formData);
 
+      console.log('📥 [VoteButton] Server response received:', result);
+
       if (!result.success) {
+        console.error('❌ [VoteButton] Server returned error:', result.error);
         // Revert optimistic update on error
         setOptimisticVoted(false);
         throw new Error(result.error || 'Failed to vote');
       }
 
+      console.log('✅ [VoteButton] Vote successful! Triggering refresh...');
+      
       // Trigger refresh to sync with server state
       if (onVoteSuccess) {
+        console.log('🔄 [VoteButton] Calling onVoteSuccess callback...');
         onVoteSuccess();
       }
       
       // Refresh router to ensure data consistency
+      console.log('🔄 [VoteButton] Refreshing router...');
       router.refresh();
+      
+      console.log('✅ [VoteButton] Vote process completed successfully');
     } catch (err) {
+      console.error('💥 [VoteButton] Exception occurred:', err);
       setError(err instanceof Error ? err.message : 'Failed to vote');
       setOptimisticVoted(false); // Revert on error
     } finally {
+      console.log('🏁 [VoteButton] Vote process finished, resetting isVoting');
       setIsVoting(false);
     }
   };

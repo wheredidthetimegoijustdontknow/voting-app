@@ -80,19 +80,20 @@
 - [x] **Data Layer: Profiles Extension**
     - [x] Migration: Add `bio`, `aura_color`, `spirit_emoji`, and `role` to `profiles` table.
     - [x] RLS Update: Allow users to `UPDATE` their own bio/aura/emoji.
-- [ ] **Structural UI: Profile System**
-    - [ ] Create dynamic route `/profile/[username]` with layout for stats and bio.
-    - [ ] Implement Profile Sidebar link to active user's page.
-- [ ] **Identity Features: Expression**
-    - [ ] **The Aura System**: Implement color-themed UI rendering based on `aura_color`.
-    - [ ] **Emoji-atar**: Replace static avatars with user-selected `spirit_emoji`.
-    - [ ] **Voter Archetypes**: Logic to display titles (e.g., "The Early Bird") based on voting history.
-- [ ] **Admin & Debug Tools**
-    - [ ] **Impersonation Mode**: Admin toggle to simulate viewing the app as a specific `profile_id`.
-    - [ ] **Global Overrides**: Admin ability to edit any poll's time limits or status.
-- [ ] **Refinements & Bug Fixes**
-    - [ ] Fix: Activity Feed `accentcolor` background bleeding issue.
-    - [ ] Fix: Ensure Poll Emoji persists in real-time vote broadcasts.
+- [X] **Structural UI: Profile System**
+    - [x] Create dynamic route `/profile/[username]` with layout for stats and bio.
+    - [x] Implement Profile Sidebar link to active user's page.
+- [x] **Identity Features: Expression**
+    - [x] **The Aura System**: Implement color-themed UI rendering based on `aura_color`.
+    - [x] **Emoji-atar**: Replace static avatars with user-selected `spirit_emoji`.
+    - [x] **Voter Archetypes**: Logic to display titles (e.g., "The Early Bird") based on voting history.
+- [-] **Admin & Debug Tools** (Implemented but buggy - need to figure out a way to logically impersonate user - new table scheme to record admin's actions or just simulate as:user)
+    - [-] **Impersonation Mode**: Admin toggle to simulate viewing the app as a specific `profile_id`. 
+        - [-] **Architectural Improvement**: Move impersonation from client-side form data to server-side session/cookie-based approach.
+    - [-] **Global Overrides**: Admin ability to edit any poll's time limits or status.
+- [x] **Refinements & Bug Fixes**
+    - [x] Fix: Activity Feed `accentcolor` background bleeding issue.
+
 
 ## Phase 9: User Analytics and Poll Analytics
 - [ ] **User Analytics**: Real-time engagement metrics and user behavior.
@@ -107,3 +108,4 @@
 - [ ] **Premium feature**: Users can set their own avatar/emoji for polls they create. (Can be a premium feature in the future)
 - [ ] **Social Features**: Comments and social sharing links.
 - [ ] **Glassmorphism Redux**: Revisit premium frosted-glass UI for modals once advanced CSS/stacking fixes are planned.
+- [ ] **Improvement**: Activity Feed notifications can be clicked on to 'focus' the poll that is referenced - it should glow the same way as when a vote comes through (Note: This wont be done until polls are individuated and have their own URL)
